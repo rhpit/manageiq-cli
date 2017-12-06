@@ -1,7 +1,11 @@
 from copy import copy
 from functools import wraps
 from importlib import import_module
-from xmlrpclib import ServerProxy
+
+try:
+    from xmlrpclib import ServerProxy
+except ImportError:
+    from xmlrpc.client import ServerProxy
 
 import click
 from os import listdir
