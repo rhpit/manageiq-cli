@@ -105,3 +105,6 @@ doc/build
 
 # VS Code files
 .vscode/
+
+# PyCharm project settings
+.idea/
