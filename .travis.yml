@@ -1,0 +1,15 @@
+language: python
+branches:
+  only:
+    - master
+matrix:
+  include:
+    - python: 2.7
+      env: TOXENV=py27,pep8,docs
+    - python: 3.6
+      env: TOXENV=py36,pep8,docs
+install:
+  - pip install tox
+  - pip install -r test-requirements.txt
+script:
+  - tox
