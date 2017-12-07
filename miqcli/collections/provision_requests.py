@@ -1,6 +1,3 @@
-import click
-
-
 class Collections(object):
     """Provision requests collections."""
 
