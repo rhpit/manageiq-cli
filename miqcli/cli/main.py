@@ -74,7 +74,7 @@ class ManageIQ(click.MultiCommand):
         :rtype: object
         """
         miq_module = import_module(COLLECTIONS_PACKAGE + '.' + name)
-        collection = miq_module.Collections()
+        collection = miq_module.Collections(ctx.params)
         return SubCollections(collection, collection.__doc__)
 
     def invoke(self, ctx):
@@ -212,6 +212,27 @@ cli = ManageIQ(
             param_decls=['--version'],
             is_flag=True,
             help='Show version and exit.'
+        ),
+        click.Option(
+            param_decls=['--token'],
+            help='token used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--url'],
+            help='token used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--username'],
+            help='username used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--password'],
+            help='username used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--enable-ssl-verify/--disable-ssl-verify'],
+            default=None,
+            help='enable or disable ssl verification, default is on.'
         )
     ]
 )

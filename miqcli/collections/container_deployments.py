@@ -14,8 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from miqcli.cli.collection import Collection
 
-class Collections(object):
+
+class Collections(Collection):
     """Container deployments collections."""
 
     def query(self):

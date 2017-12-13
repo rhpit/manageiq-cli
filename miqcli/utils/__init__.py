@@ -33,6 +33,8 @@ def get_class_methods(cls):
     for key, value in cls.__dict__.items():
         if not isinstance(value, FunctionType):
             continue
+        if key == "__init__":
+            continue
         methods.append(key)
     methods.sort()
     return methods

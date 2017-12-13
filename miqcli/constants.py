@@ -22,3 +22,5 @@ PYPI = 'https://pypi.python.org/pypi'
 PROJECT_ROOT = dirname(__file__)
 COLLECTIONS_ROOT = join(PROJECT_ROOT, 'collections')
 COLLECTIONS_PACKAGE = PACKAGE + '.' + 'collections'
+MIQCLI_CFG_FILE_LOC = '/etc/miqcli'
+MIQCLI_CFG_NAME = 'miqcli.cfg'
