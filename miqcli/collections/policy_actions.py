@@ -16,6 +16,7 @@
 
 from miqcli.cli.collection import Collection
 
+
 class Collections(Collection):
     """Policy actions collections."""
 

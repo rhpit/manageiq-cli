@@ -5,6 +5,7 @@ import sys
 
 from miqcli.constants import MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME
 
+
 class Collection(object):
     """
     Collection Class
@@ -48,17 +49,17 @@ class Collection(object):
         # check the local path for the config file
         elif os.path.isfile(os.path.join(os.getcwd(), MIQCLI_CFG_NAME)):
             local_cfg = os.path.join(os.getcwd(), MIQCLI_CFG_NAME)
-            stream = file(local_cfg, 'r')
+            stream = open(local_cfg, 'r')
             self._settings = yaml.load(stream)
 
         # the MIQ default config file has the lowest precedence
         else:
             try:
-                stream = file(os.path.join(
+                stream = open(os.path.join(
                     MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME), 'r')
                 self._settings = yaml.load(stream)
-            except:
-                print ("Please set the required settings in the file:"
-                                " {}".format(os.path.join(MIQCLI_CFG_FILE_LOC,
-                                                         MIQCLI_CFG_NAME)))
+            except (IOError, yaml.YAMLError):
+                print("Please set the required settings in the file:"
+                      " {}".format(os.path.join(MIQCLI_CFG_FILE_LOC,
+                                                MIQCLI_CFG_NAME)))
                 sys.exit(1)
