@@ -32,7 +32,6 @@ class Collection(object):
         """
         Verify the settings are already set, if not go through all options
         of collecting settings
-        :return:
         """
         # Get configuration setup for the Collections
         # if global options will take the highest precedence
