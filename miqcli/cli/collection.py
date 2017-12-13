@@ -1,7 +1,6 @@
 import os
 import yaml
 import ast
-import sys
 
 from miqcli.constants import MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME
 
@@ -49,17 +48,16 @@ class Collection(object):
         # check the local path for the config file
         elif os.path.isfile(os.path.join(os.getcwd(), MIQCLI_CFG_NAME)):
             local_cfg = os.path.join(os.getcwd(), MIQCLI_CFG_NAME)
-            stream = open(local_cfg, 'r')
-            self._settings = yaml.load(stream)
+            with open(local_cfg, 'r') as f:
+                self._settings = yaml.load(f)
 
         # the MIQ default config file has the lowest precedence
         else:
             try:
-                stream = open(os.path.join(
-                    MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME), 'r')
-                self._settings = yaml.load(stream)
+                etc_cfg = os.path.join(MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME)
+                with open(etc_cfg, 'r') as f:
+                    self._settings = yaml.load(f)
             except (IOError, yaml.YAMLError):
                 print("Please set the required settings in the file:"
-                      " {}".format(os.path.join(MIQCLI_CFG_FILE_LOC,
-                                                MIQCLI_CFG_NAME)))
-                sys.exit(1)
+                      " {}".format(etc_cfg))
+                raise SystemExit(1)
