@@ -14,6 +14,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
+import yaml
+import ast
 from copy import copy
 from functools import wraps
 from importlib import import_module
@@ -27,7 +30,7 @@ import click
 from os import listdir
 
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION
+    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME
 from miqcli.utils import get_class_methods
 
 
@@ -118,8 +121,57 @@ class ManageIQ(click.MultiCommand):
                 click.echo(msg)
                 ctx.exit()
         else:
+            # collect settings from the client user
+            self.set_configuration(ctx)
             # invoke the collection
             super(ManageIQ, self).invoke(ctx)
+
+    def set_configuration(self, ctx):
+        """Setting the configuration from the client.
+
+        This method will set the configuration from the client by updating
+        MIQ's context data.
+
+        Precedence of setting configuration:
+        1. options from the CLI
+        2. setting the env var MIQ_CFG with the dictionary of settings value
+        3. reading a local yaml
+        4. reading a yaml set at the machine level in (/etc)
+
+        :param ctx: Click context.
+        :type ctx: Namespace
+        """
+        if "url" in ctx.params and ctx.params["url"] or \
+           "username" in ctx.params and ctx.params["username"] or \
+           "password" in ctx.params and ctx.params["password"] or \
+           "token" in ctx.params and ctx.params["token"]:
+            # the global settings have been set no need to do anything
+            pass
+        # setting the MIQ_CFG env var will have the 2nd highest precedence
+        elif 'MIQ_CFG' in os.environ and os.environ['MIQ_CFG']:
+            settings = ast.literal_eval(os.environ['MIQ_CFG'])
+            for key in settings:
+                ctx.params[key] = settings[key]
+
+        # check the local path for the config file
+        elif os.path.isfile(os.path.join(os.getcwd(), MIQCLI_CFG_NAME)):
+            local_cfg = os.path.join(os.getcwd(), MIQCLI_CFG_NAME)
+            with open(local_cfg, 'r') as f:
+                settings = yaml.load(f)
+                for key in settings:
+                    ctx.params[key] = settings[key]
+        # the MIQ default config file has the lowest precedence
+        else:
+            try:
+                etc_cfg = os.path.join(MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME)
+                with open(etc_cfg, 'r') as f:
+                    settings = yaml.load(f)
+                    for key in settings:
+                        ctx.params[key] = settings[key]
+            except (IOError, yaml.YAMLError):
+                # unable to set the data, and error will occur when attempting
+                # to use the data
+                pass
 
 
 class SubCollections(click.MultiCommand):

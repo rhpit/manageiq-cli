@@ -13,3 +13,27 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
+class Collection(object):
+    """
+    Collection Class
+
+    Main option is to save the settings
+    """
+
+    _settings = None
+
+    def __init__(self, settings):
+        """
+        :param settings: MIQ settings
+        :type settings: dict
+        """
+        self._settings = settings
+
+    @property
+    def settings(self):
+        """
+        :return: dict of settings
+        """
+        return self._settings
