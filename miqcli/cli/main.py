@@ -30,8 +30,8 @@ import click
 from os import listdir
 
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME
-from miqcli.utils import get_class_methods
+    PYPI, VERSION, MIQCLI_CFG_FILE_LOC
+from miqcli.utils import get_class_methods, check_yaml
 
 
 class ManageIQ(click.MultiCommand):
@@ -116,7 +116,7 @@ class ManageIQ(click.MultiCommand):
                 version = 'N/A'
             finally:
                 msg = 'Installed version : {0}\nLatest version    : {1}\n\n' \
-                    'You are running {2} version of ManageIQ CLI!'.\
+                      'You are running {2} version of ManageIQ CLI!'. \
                     format(VERSION, version, status)
                 click.echo(msg)
                 ctx.exit()
@@ -142,11 +142,11 @@ class ManageIQ(click.MultiCommand):
         :type ctx: Namespace
         """
         if "url" in ctx.params and ctx.params["url"] or \
-           "username" in ctx.params and ctx.params["username"] or \
-           "password" in ctx.params and ctx.params["password"] or \
-           "token" in ctx.params and ctx.params["token"]:
+                "username" in ctx.params and ctx.params["username"] or \
+                "password" in ctx.params and ctx.params["password"] or \
+                "token" in ctx.params and ctx.params["token"]:
             # the global settings have been set no need to do anything
-            pass
+            return
         # setting the MIQ_CFG env var will have the 2nd highest precedence
         elif 'MIQ_CFG' in os.environ and os.environ['MIQ_CFG']:
             settings = ast.literal_eval(os.environ['MIQ_CFG'])
@@ -154,24 +154,28 @@ class ManageIQ(click.MultiCommand):
                 ctx.params[key] = settings[key]
 
         # check the local path for the config file
-        elif os.path.isfile(os.path.join(os.getcwd(), MIQCLI_CFG_NAME)):
-            local_cfg = os.path.join(os.getcwd(), MIQCLI_CFG_NAME)
+        elif check_yaml(os.getcwd())["exists"]:
+            local_cfg = check_yaml(os.getcwd())["filepath"]
             with open(local_cfg, 'r') as f:
-                settings = yaml.load(f)
+                try:
+                    settings = yaml.load(f)
+                except yaml.YAMLError:
+                    # suppress error for invalid yaml
+                    return
                 for key in settings:
                     ctx.params[key] = settings[key]
         # the MIQ default config file has the lowest precedence
         else:
-            try:
-                etc_cfg = os.path.join(MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME)
-                with open(etc_cfg, 'r') as f:
-                    settings = yaml.load(f)
-                    for key in settings:
-                        ctx.params[key] = settings[key]
-            except (IOError, yaml.YAMLError):
-                # unable to set the data, and error will occur when attempting
-                # to use the data
-                pass
+            if check_yaml(MIQCLI_CFG_FILE_LOC)["exists"]:
+                etc_file = check_yaml(MIQCLI_CFG_FILE_LOC)["filepath"]
+                try:
+                    with open(etc_file, 'r') as f:
+                        settings = yaml.load(f)
+                        for key in settings:
+                            ctx.params[key] = settings[key]
+                except yaml.YAMLError:
+                    # suppress error for invalid yaml
+                    return
 
 
 class SubCollections(click.MultiCommand):

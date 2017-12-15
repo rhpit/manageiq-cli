@@ -14,7 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
+from miqcli.constants import MIQCLI_CFG_NAME
 from types import FunctionType
+
 
 __all__ = ['get_class_methods']
 
@@ -38,3 +41,31 @@ def get_class_methods(cls):
         methods.append(key)
     methods.sort()
     return methods
+
+
+def check_yaml(file_location):
+    """ Check for our yaml config file independent of extension
+    :param file_location: location of where to search for the yaml
+    :tyep file_location: string
+    :return: "exists": true/false and "filepath": file_location
+    :rtype: dict
+    """
+
+    rdict = {"exists": False, "filepath": None}
+
+    if os.path.isfile(
+            "{0}.yaml".format(os.path.join(file_location,
+                                           MIQCLI_CFG_NAME))) or \
+            os.path.isfile(
+            "{0}.yml".format(os.path.join(file_location,
+                                          MIQCLI_CFG_NAME))):
+        rdict["exists"] = True
+
+        yaml_file = "{0}.yaml".format(os.path.join(
+            file_location, MIQCLI_CFG_NAME))
+        if not os.path.isfile(yaml_file):
+            yaml_file = "{0}.yml".format(os.path.join(
+                file_location, MIQCLI_CFG_NAME))
+        rdict["filepath"] = yaml_file
+
+    return rdict
