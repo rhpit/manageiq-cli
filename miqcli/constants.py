@@ -24,3 +24,4 @@ COLLECTIONS_ROOT = join(PROJECT_ROOT, 'collections')
 COLLECTIONS_PACKAGE = PACKAGE + '.' + 'collections'
 MIQCLI_CFG_FILE_LOC = '/etc/miqcli'
 MIQCLI_CFG_NAME = 'miqcli'
+SETTINGS_KEYS = ["url", "username", "password", "token", "enable_ssl_verify"]
