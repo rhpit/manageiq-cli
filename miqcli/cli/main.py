@@ -15,8 +15,6 @@
 #
 
 import os
-import yaml
-import ast
 from copy import copy
 from functools import wraps
 from importlib import import_module
@@ -30,8 +28,8 @@ import click
 from os import listdir
 
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, SETTINGS_KEYS
-from miqcli.utils import get_class_methods, check_yaml
+    PYPI, VERSION, MIQCLI_CFG_FILE_LOC
+from miqcli.utils import Config, get_class_methods, check_yaml
 
 
 class ManageIQ(click.MultiCommand):
@@ -121,73 +119,8 @@ class ManageIQ(click.MultiCommand):
                 click.echo(msg)
                 ctx.exit()
         else:
-            # collect settings from the client user
-            self.set_configuration(ctx)
             # invoke the collection
             super(ManageIQ, self).invoke(ctx)
-
-    def set_configuration(self, ctx):
-        """Setting the configuration from the client.
-
-        This method will set the configuration from the client by updating
-        MIQ's context data, and support overriding data.
-
-        Precedence of setting configuration:
-        1. options from the CLI
-        2. setting the env var MIQ_CFG with the dictionary of settings value
-        3. reading a local yaml
-        4. reading a yaml set at the machine level in (/etc)
-
-        :param ctx: Click context.
-        :type ctx: Namespace
-        """
-        # get initial settings from cli and make sure they are not
-        # overwritten
-        main_settings = {}
-        found_match = False
-        for key in SETTINGS_KEYS:
-            if found_match:
-                break
-            elif key in ctx.params and ctx.params:
-                found_match = True
-                for key in SETTINGS_KEYS:
-                    if key in ctx.params and ctx.params[key]:
-                        main_settings[key] = ctx.params[key]
-
-        # get settings from the lowest precedence first (/etc)
-        if check_yaml(MIQCLI_CFG_FILE_LOC)["exists"]:
-            etc_file = check_yaml(MIQCLI_CFG_FILE_LOC)["filepath"]
-            try:
-                with open(etc_file, 'r') as f:
-                    settings = yaml.load(f)
-                    for key in settings:
-                        ctx.params[key] = settings[key]
-            except yaml.YAMLError:
-                # suppress error for invalid yaml
-                pass
-
-        # check the local path for the config file
-        if check_yaml(os.getcwd())["exists"]:
-            local_cfg = check_yaml(os.getcwd())["filepath"]
-            with open(local_cfg, 'r') as f:
-                try:
-                    settings = yaml.load(f)
-                except yaml.YAMLError:
-                    # suppress error for invalid yaml
-                    pass
-                for key in settings:
-                    ctx.params[key] = settings[key]
-
-        # check the env_var
-        if 'MIQ_CFG' in os.environ and os.environ['MIQ_CFG']:
-            settings = ast.literal_eval(os.environ['MIQ_CFG'])
-            for key in settings:
-                ctx.params[key] = settings[key]
-
-        # highest priority will be values from the cli
-        if main_settings:
-            for key in main_settings:
-                ctx.params[key] = main_settings[key]
 
 
 class SubCollections(click.MultiCommand):
@@ -272,8 +205,26 @@ class SubCollections(click.MultiCommand):
         return cmd
 
 
+# set context settings w/ our configuration
+config = Config({})
+
+# check lowest precedence /etc first
+if check_yaml(MIQCLI_CFG_FILE_LOC)["exists"]:
+    config.from_yaml(check_yaml(MIQCLI_CFG_FILE_LOC)["filepath"], silent=True)
+
+# next check the local path
+if check_yaml(os.getcwd())["exists"]:
+    config.from_yaml(check_yaml(os.getcwd())["filepath"], silent=True)
+
+# next check the env var
+if 'MIQ_CFG' in os.environ and os.environ['MIQ_CFG']:
+    config.from_env('MIQ_CFG', silent=True)
+
+CONTEXT_SETTINGS = dict(default_map=config)
+
 # it all begins here..
 cli = ManageIQ(
+    context_settings=CONTEXT_SETTINGS,
     help=ManageIQ.__doc__.split('::')[0].strip(),
     params=[
         click.Option(
@@ -287,7 +238,7 @@ cli = ManageIQ(
         ),
         click.Option(
             param_decls=['--url'],
-            help='token used for authentication to the server.'
+            help='url for the ManageIQ appliance.'
         ),
         click.Option(
             param_decls=['--username'],
@@ -295,7 +246,7 @@ cli = ManageIQ(
         ),
         click.Option(
             param_decls=['--password'],
-            help='username used for authentication to the server.'
+            help='password used for authentication to the server.'
         ),
         click.Option(
             param_decls=['--enable-ssl-verify/--disable-ssl-verify'],
