@@ -65,6 +65,11 @@ class Config(dict):
                 return False
             raise RuntimeError('Unable to load configuration file '
                                '{0}'.format(e.strerror))
+        except TypeError as e:
+            if silent:
+                return False
+            raise RuntimeError('Set a valid configuration file to load '
+                               '{0}'.format(e.strerror))
 
     def from_env(self, variable_name, silent=False):
         """

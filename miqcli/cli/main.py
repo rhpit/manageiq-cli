@@ -28,7 +28,7 @@ import click
 from os import listdir
 
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION, MIQCLI_CFG_FILE_LOC
+    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, DEFAULT_CONFIG
 from miqcli.utils import Config, get_class_methods, check_yaml
 
 
@@ -206,19 +206,16 @@ class SubCollections(click.MultiCommand):
 
 
 # set context settings w/ our configuration
-config = Config({})
+config = Config(DEFAULT_CONFIG)
 
 # check lowest precedence /etc first
-if check_yaml(MIQCLI_CFG_FILE_LOC)["exists"]:
-    config.from_yaml(check_yaml(MIQCLI_CFG_FILE_LOC)["filepath"], silent=True)
+config.from_yaml(check_yaml(MIQCLI_CFG_FILE_LOC)["filepath"], silent=True)
 
 # next check the local path
-if check_yaml(os.getcwd())["exists"]:
-    config.from_yaml(check_yaml(os.getcwd())["filepath"], silent=True)
+config.from_yaml(check_yaml(os.getcwd())["filepath"], silent=True)
 
 # next check the env var
-if 'MIQ_CFG' in os.environ and os.environ['MIQ_CFG']:
-    config.from_env('MIQ_CFG', silent=True)
+config.from_env('MIQ_CFG', silent=True)
 
 CONTEXT_SETTINGS = dict(default_map=config)
 
