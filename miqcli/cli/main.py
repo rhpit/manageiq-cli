@@ -28,8 +28,8 @@ import click
 from os import listdir
 
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, DEFAULT_CONFIG
-from miqcli.utils import Config, get_class_methods, check_yaml
+    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, DEFAULT_CONFIG, MIQCLI_CFG_NAME
+from miqcli.utils import Config, get_class_methods
 
 
 class ManageIQ(click.MultiCommand):
@@ -209,10 +209,12 @@ class SubCollections(click.MultiCommand):
 config = Config(DEFAULT_CONFIG)
 
 # check lowest precedence /etc first
-config.from_yaml(check_yaml(MIQCLI_CFG_FILE_LOC)["filepath"], silent=True)
+config.from_yaml(os.path.join(MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME),
+                 silent=True)
 
 # next check the local path
-config.from_yaml(check_yaml(os.getcwd())["filepath"], silent=True)
+config.from_yaml(os.path.join(os.getcwd(), MIQCLI_CFG_NAME),
+                 silent=True)
 
 # next check the env var
 config.from_env('MIQ_CFG', silent=True)

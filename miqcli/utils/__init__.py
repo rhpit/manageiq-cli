@@ -18,7 +18,6 @@ import os
 import yaml
 import ast
 import errno
-from miqcli.constants import MIQCLI_CFG_NAME
 from types import FunctionType
 
 
@@ -50,6 +49,22 @@ class Config(dict):
         :type silent: Boolean
         :return:
         """
+        # check for *.yml or *.yaml extension
+        if filename:
+            split_filename = os.path.splitext(filename)
+            if os.path.isfile(split_filename[0] + ".yaml"):
+                filename = split_filename[0] + ".yaml"
+            elif os.path.isfile(split_filename[0] + ".yml"):
+                filename = split_filename[0] + ".yml"
+            else:
+                if silent:
+                    return False
+                raise RuntimeError("Config file: {0} does not exist"
+                                   "".format(filename))
+        else:
+            if silent:
+                return False
+            raise RuntimeError("Set a valid configuration file to load.")
         try:
             with open(filename, mode='rb') as fp:
                 config_data = yaml.load(fp)
@@ -64,11 +79,6 @@ class Config(dict):
             if silent and e.errno in (errno.ENOENT, errno.EISDIR):
                 return False
             raise RuntimeError('Unable to load configuration file '
-                               '{0}'.format(e.strerror))
-        except TypeError as e:
-            if silent:
-                return False
-            raise RuntimeError('Set a valid configuration file to load '
                                '{0}'.format(e.strerror))
 
     def from_env(self, variable_name, silent=False):
@@ -110,31 +120,3 @@ def get_class_methods(cls):
         methods.append(key)
     methods.sort()
     return methods
-
-
-def check_yaml(file_location):
-    """ Check for our yaml config file independent of extension
-    :param file_location: location of where to search for the yaml
-    :tyep file_location: string
-    :return: "exists": true/false and "filepath": file_location
-    :rtype: dict
-    """
-
-    rdict = {"exists": False, "filepath": None}
-
-    if os.path.isfile(
-            "{0}.yaml".format(os.path.join(file_location,
-                                           MIQCLI_CFG_NAME))) or \
-            os.path.isfile(
-            "{0}.yml".format(os.path.join(file_location,
-                                          MIQCLI_CFG_NAME))):
-        rdict["exists"] = True
-
-        yaml_file = "{0}.yaml".format(os.path.join(
-            file_location, MIQCLI_CFG_NAME))
-        if not os.path.isfile(yaml_file):
-            yaml_file = "{0}.yml".format(os.path.join(
-                file_location, MIQCLI_CFG_NAME))
-        rdict["filepath"] = yaml_file
-
-    return rdict
