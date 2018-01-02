@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 from copy import copy
 from functools import wraps
 from importlib import import_module
@@ -27,8 +28,8 @@ import click
 from os import listdir
 
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION
-from miqcli.utils import get_class_methods
+    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, DEFAULT_CONFIG, MIQCLI_CFG_NAME
+from miqcli.utils import Config, get_class_methods
 
 
 class ManageIQ(click.MultiCommand):
@@ -74,7 +75,7 @@ class ManageIQ(click.MultiCommand):
         :rtype: object
         """
         miq_module = import_module(COLLECTIONS_PACKAGE + '.' + name)
-        collection = miq_module.Collections()
+        collection = miq_module.Collections(ctx.params)
         return SubCollections(collection, collection.__doc__)
 
     def invoke(self, ctx):
@@ -113,7 +114,7 @@ class ManageIQ(click.MultiCommand):
                 version = 'N/A'
             finally:
                 msg = 'Installed version : {0}\nLatest version    : {1}\n\n' \
-                    'You are running {2} version of ManageIQ CLI!'.\
+                      'You are running {2} version of ManageIQ CLI!'. \
                     format(VERSION, version, status)
                 click.echo(msg)
                 ctx.exit()
@@ -204,14 +205,52 @@ class SubCollections(click.MultiCommand):
         return cmd
 
 
+# set context settings w/ our configuration
+config = Config(DEFAULT_CONFIG)
+
+# check lowest precedence /etc first
+config.from_yaml(os.path.join(MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME),
+                 silent=True)
+
+# next check the local path
+config.from_yaml(os.path.join(os.getcwd(), MIQCLI_CFG_NAME),
+                 silent=True)
+
+# next check the env var
+config.from_env('MIQ_CFG', silent=True)
+
+CONTEXT_SETTINGS = dict(default_map=config)
+
 # it all begins here..
 cli = ManageIQ(
+    context_settings=CONTEXT_SETTINGS,
     help=ManageIQ.__doc__.split('::')[0].strip(),
     params=[
         click.Option(
             param_decls=['--version'],
             is_flag=True,
             help='Show version and exit.'
+        ),
+        click.Option(
+            param_decls=['--token'],
+            help='token used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--url'],
+            help='url for the ManageIQ appliance.'
+        ),
+        click.Option(
+            param_decls=['--username'],
+            help='username used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--password'],
+            help='password used for authentication to the server.'
+        ),
+        click.Option(
+            param_decls=['--enable-ssl-verify/--disable-ssl-verify'],
+            default=None,
+            help='enable or disable ssl verification, default is on.'
         )
     ]
 )

@@ -22,3 +22,11 @@ PYPI = 'https://pypi.python.org/pypi'
 PROJECT_ROOT = dirname(__file__)
 COLLECTIONS_ROOT = join(PROJECT_ROOT, 'collections')
 COLLECTIONS_PACKAGE = PACKAGE + '.' + 'collections'
+MIQCLI_CFG_FILE_LOC = '/etc/miqcli'
+MIQCLI_CFG_NAME = 'miqcli'
+DEFAULT_CONFIG = {
+    'username': 'admin',
+    'password': 'smartvm',
+    'url': 'https://localhost:8443',
+    'enable_ssl_verify': False
+}

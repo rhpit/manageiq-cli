@@ -14,8 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from miqcli.collections import Collection
 
-class Collections(object):
+
+class Collections(Collection):
     """Tenants collections."""
 
     def query(self):
