@@ -204,6 +204,19 @@ class SubCollections(click.MultiCommand):
         cmd = click.command(name=name, **attributes)(new_method)
         return cmd
 
+    def invoke(self, ctx):
+        """Invoke the sub-command selected.
+
+        Runs the sub-command given with all its arguments. Before it invokes
+        the sub-command action to run, it will attempt to establish a
+        connection to ManageIQ.
+
+        :param ctx: Click context.
+        :type ctx: Namespace
+        """
+        self.collection.connect()
+        super(SubCollections, self).invoke(ctx)
+
 
 # set context settings w/ our configuration
 config = Config(DEFAULT_CONFIG)
