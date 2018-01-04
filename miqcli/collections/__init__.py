@@ -14,8 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from miqcli.api import ClientAPI
 
-class Collection(object):
+
+class Collection(ClientAPI):
     """
     Collection Class
 
@@ -29,6 +31,7 @@ class Collection(object):
         :param settings: MIQ settings
         :type settings: dict
         """
+        super(Collection, self).__init__()
         self._settings = settings
 
     @property
@@ -37,3 +40,7 @@ class Collection(object):
         :return: dict of settings
         """
         return self._settings
+
+    def connect(self):
+        """Create a connection to the ManageIQ server."""
+        super(Collection, self).connect(self.settings)
