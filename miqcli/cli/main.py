@@ -210,7 +210,9 @@ class SubCollections(click.MultiCommand):
         :param ctx: Click context.
         :type ctx: Namespace
         """
-        self.collection.connect()
+        if '--help' not in ctx.args:
+            # help does not need an api connection, it shows params and exits
+            self.collection.connect()
         super(SubCollections, self).invoke(ctx)
 
 
