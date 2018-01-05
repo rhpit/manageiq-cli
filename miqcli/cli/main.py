@@ -19,14 +19,10 @@ from copy import copy
 from functools import wraps
 from importlib import import_module
 
-try:
-    from xmlrpclib import ServerProxy
-except ImportError:
-    from xmlrpc.client import ServerProxy
-
 import click
 from os import listdir
 
+from miqcli._compat import ServerProxy
 from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
     PYPI, VERSION, MIQCLI_CFG_FILE_LOC, DEFAULT_CONFIG, MIQCLI_CFG_NAME
 from miqcli.utils import Config, get_class_methods
