@@ -27,6 +27,7 @@ MIQCLI_CFG_NAME = 'miqcli'
 DEFAULT_CONFIG = {
     'username': 'admin',
     'password': 'smartvm',
-    'url': 'https://localhost:8443',
+    'url': 'https://localhost:8443/api',
     'enable_ssl_verify': False
 }
+AUTHDIR = ".miqcli/auth"
