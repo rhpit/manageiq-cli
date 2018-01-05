@@ -40,9 +40,17 @@ class ClientAPI(object):
     actions.
     """
 
-    def __init__(self):
+    def __init__(self, settings):
         """Constructor."""
+        self._settings = settings
         self._client = None
+
+    @property
+    def settings(self):
+        """
+        :return: dict of settings
+        """
+        return self._settings
 
     @property
     def client(self):
@@ -62,12 +70,13 @@ class ClientAPI(object):
         """
         self._client = value
 
-    def connect(self, settings):
+    def connect(self):
         """Create a connection to the ManageIQ server.
 
         :param settings: ManageIQ settings.
         :type settings: dict
         """
+        settings = self.settings
         authfile = os.path.join(os.environ["HOME"], AUTHDIR)
         # attempt a connection with a passed token
         if "token" in settings and settings["token"]:
@@ -77,7 +86,7 @@ class ClientAPI(object):
                                    "{0}".format(exception))
         # check for an auth token file & validate
         if os.path.isfile(authfile):
-            with file(authfile) as f:
+            with open(authfile) as f:
                 settings["token"] = f.read().strip()
             succ_auth, exception = self.miq_auth(settings["token"])
             if not succ_auth:
@@ -110,7 +119,7 @@ class ClientAPI(object):
         """
         method to get a token if username/password is set
         """
-        auth_endpoint = self.settings["url"] + "/auth"
+        auth_endpoint = self.settings["url"] + "/api/auth"
         output = requests.get(auth_endpoint,
                               auth=HTTPBasicAuth(self.settings["username"],
                                                  self.settings["password"]),
@@ -130,17 +139,19 @@ class ClientAPI(object):
         :rtype: (Boolean, str)
         """
         settings = self.settings
+        connect_url = settings["url"] + "/api"
+        ssl_verify = settings["enable_ssl_verify"]
         authfile = os.path.join(os.environ["HOME"], AUTHDIR)
 
         try:
-            self._client = ManageIQClient(settings["url"],
-                                  dict(token=settings["token"]),
-                                  verify_ssl=settings["enable_ssl_verify"])
+            self._client = ManageIQClient(connect_url,
+                                          dict(token=settings["token"]),
+                                          verify_ssl=ssl_verify)
             # update auth file with token
             with open(authfile, "w") as f:
                 f.write(token)
 
-            return (True, None)
+            return True, None
         except (APIException, ConnectionError) as ex:
             # token is invalid
-            return (False, ex)
+            return False, ex
