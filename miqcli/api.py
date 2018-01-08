@@ -85,7 +85,7 @@ class ClientAPI(object):
                 raise RuntimeError("Unable to auth with passed token: "
                                    "{0}".format(exception))
         # check for an auth token file & validate
-        if os.path.isfile(authfile):
+        elif os.path.isfile(authfile):
             with open(authfile) as f:
                 settings["token"] = f.read().strip()
             succ_auth, exception = self.miq_auth(settings["token"])
