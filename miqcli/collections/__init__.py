@@ -31,16 +31,8 @@ class Collection(ClientAPI):
         :param settings: MIQ settings
         :type settings: dict
         """
-        super(Collection, self).__init__()
-        self._settings = settings
-
-    @property
-    def settings(self):
-        """
-        :return: dict of settings
-        """
-        return self._settings
+        super(Collection, self).__init__(settings)
 
     def connect(self):
         """Create a connection to the ManageIQ server."""
-        super(Collection, self).connect(self.settings)
+        super(Collection, self).connect()

@@ -16,8 +16,13 @@
 
 import os
 
+import requests
+from requests.auth import HTTPBasicAuth
+
 from manageiq_client.api import APIException, ManageIQClient
 from requests.exceptions import ConnectionError
+
+from miqcli.constants import AUTHDIR
 
 
 class ClientAPI(object):
@@ -35,9 +40,17 @@ class ClientAPI(object):
     actions.
     """
 
-    def __init__(self):
+    def __init__(self, settings):
         """Constructor."""
+        self._settings = settings
         self._client = None
+
+    @property
+    def settings(self):
+        """
+        :return: dict of settings
+        """
+        return self._settings
 
     @property
     def client(self):
@@ -57,22 +70,88 @@ class ClientAPI(object):
         """
         self._client = value
 
-    def connect(self, settings):
+    def connect(self):
         """Create a connection to the ManageIQ server.
 
         :param settings: ManageIQ settings.
         :type settings: dict
         """
+        settings = self.settings
+        authfile = os.path.join(os.environ["HOME"], AUTHDIR)
+        # attempt a connection with a passed token
+        if "token" in settings and settings["token"]:
+            succ_auth, exception = self.miq_auth(settings["token"])
+            if not succ_auth:
+                raise RuntimeError("Unable to auth with passed token: "
+                                   "{0}".format(exception))
+        # check for an auth token file & validate
+        if os.path.isfile(authfile):
+            with open(authfile) as f:
+                settings["token"] = f.read().strip()
+            succ_auth, exception = self.miq_auth(settings["token"])
+            if not succ_auth:
+                if "username" in settings and settings["username"] and \
+                        "password" in settings and settings["password"]:
+                    self.get_token()
+                else:
+                    raise RuntimeError("Please provide valid "
+                                       "credentials to connect")
+                succ_auth, exception = self.miq_auth(settings["token"])
+                if not succ_auth:
+                    raise RuntimeError("Unable to authenticate "
+                                       "{0}".format(exception))
+        # authenticate and create auth token file if it does not exist
+        else:
+            if not os.path.exists(os.path.dirname(authfile)):
+                os.makedirs(os.path.dirname(authfile))
+
+            if "username" in settings and settings["username"] and \
+                    "password" in settings and settings["password"]:
+                self.get_token()
+            else:
+                raise RuntimeError("Provide valid credentials to connect")
+            succ_auth, exception = self.miq_auth(settings["token"])
+            if not succ_auth:
+                raise RuntimeError("Authentication failed: "
+                                   "{0}".format(exception))
+
+    def get_token(self):
+        """
+        method to get a token if username/password is set
+        """
+        auth_endpoint = self.settings["url"] + "/api/auth"
+        output = requests.get(auth_endpoint,
+                              auth=HTTPBasicAuth(self.settings["username"],
+                                                 self.settings["password"]),
+                              verify=False)
+
+        if output.status_code == 200:
+            self.settings["token"] = output.json()["auth_token"]
+        else:
+            raise RuntimeError("Unsuccessful attempt to authenticate: "
+                               "{}".format(output.status_code))
+
+    def miq_auth(self, token):
+        """
+        method to authenticate to the ManageIQ Server given a token
+        :param token: token to authenticate with
+        :return: tuple (successful True/False, and Exception)
+        :rtype: (Boolean, str)
+        """
+        settings = self.settings
+        connect_url = settings["url"] + "/api"
+        ssl_verify = settings["enable_ssl_verify"]
+        authfile = os.path.join(os.environ["HOME"], AUTHDIR)
+
         try:
-            # TODO: handle setting auth details, covered by issue #33
-            self._client = ManageIQClient(
-                entry_point=os.path.join(settings['url'], 'api'),
-                auth=dict(
-                    user=settings['username'],
-                    password=settings['password'],
-                    token=settings['token']
-                ),
-                verify_ssl=settings['enable_ssl_verify']
-            )
+            self._client = ManageIQClient(connect_url,
+                                          dict(token=settings["token"]),
+                                          verify_ssl=ssl_verify)
+            # update auth file with token
+            with open(authfile, "w") as f:
+                f.write(token)
+
+            return True, None
         except (APIException, ConnectionError) as ex:
-            raise RuntimeError(ex)
+            # token is invalid
+            return False, ex

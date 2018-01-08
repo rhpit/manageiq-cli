@@ -30,3 +30,4 @@ DEFAULT_CONFIG = {
     'url': 'https://localhost:8443',
     'enable_ssl_verify': False
 }
+AUTHDIR = ".miqcli/auth"
