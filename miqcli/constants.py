@@ -14,13 +14,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from os.path import dirname, join
+import os
 
 VERSION = '0.0.0'
 PACKAGE = 'miqcli'
 PYPI = 'https://pypi.python.org/pypi'
-PROJECT_ROOT = dirname(__file__)
-COLLECTIONS_ROOT = join(PROJECT_ROOT, 'collections')
+PROJECT_ROOT = os.path.dirname(__file__)
+COLLECTIONS_ROOT = os.path.join(PROJECT_ROOT, 'collections')
 COLLECTIONS_PACKAGE = PACKAGE + '.' + 'collections'
 MIQCLI_CFG_FILE_LOC = '/etc/miqcli'
 MIQCLI_CFG_NAME = 'miqcli'
@@ -30,4 +30,4 @@ DEFAULT_CONFIG = {
     'url': 'https://localhost:8443',
     'enable_ssl_verify': False
 }
-AUTHDIR = ".miqcli/auth"
+AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")

@@ -72,12 +72,8 @@ class ClientAPI(object):
 
     def connect(self):
         """Create a connection to the ManageIQ server.
-
-        :param settings: ManageIQ settings.
-        :type settings: dict
         """
         settings = self.settings
-        authfile = os.path.join(os.environ["HOME"], AUTHDIR)
         # attempt a connection with a passed token
         if "token" in settings and settings["token"]:
             succ_auth, exception = self.miq_auth(settings["token"])
@@ -85,8 +81,8 @@ class ClientAPI(object):
                 raise RuntimeError("Unable to auth with passed token: "
                                    "{0}".format(exception))
         # check for an auth token file & validate
-        elif os.path.isfile(authfile):
-            with open(authfile) as f:
+        if os.path.isfile(AUTHDIR):
+            with open(AUTHDIR) as f:
                 settings["token"] = f.read().strip()
             succ_auth, exception = self.miq_auth(settings["token"])
             if not succ_auth:
@@ -102,8 +98,8 @@ class ClientAPI(object):
                                        "{0}".format(exception))
         # authenticate and create auth token file if it does not exist
         else:
-            if not os.path.exists(os.path.dirname(authfile)):
-                os.makedirs(os.path.dirname(authfile))
+            if not os.path.exists(os.path.dirname(AUTHDIR)):
+                os.makedirs(os.path.dirname(AUTHDIR))
 
             if "username" in settings and settings["username"] and \
                     "password" in settings and settings["password"]:
@@ -141,14 +137,13 @@ class ClientAPI(object):
         settings = self.settings
         connect_url = settings["url"] + "/api"
         ssl_verify = settings["enable_ssl_verify"]
-        authfile = os.path.join(os.environ["HOME"], AUTHDIR)
 
         try:
             self._client = ManageIQClient(connect_url,
                                           dict(token=settings["token"]),
                                           verify_ssl=ssl_verify)
             # update auth file with token
-            with open(authfile, "w") as f:
+            with open(AUTHDIR, "w") as f:
                 f.write(token)
 
             return True, None
