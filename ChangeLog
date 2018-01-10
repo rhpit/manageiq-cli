@@ -1,8 +1,6 @@
 CHANGES
 =======
 
-* remove connect func and clean docstring
-* fix exception compat syntax error
 * improve CLientAPI constructor
 * fix AUTHDIR constant to multiple platform
 * updating so if user passes a token that is the only auth attempted (#41)
