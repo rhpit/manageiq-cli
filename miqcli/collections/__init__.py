@@ -28,4 +28,3 @@ class Collection(ClientAPI):
         :type settings: dict
         """
         super(Collection, self).__init__(settings)
-
