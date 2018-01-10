@@ -1,20 +1,4 @@
 CHANGES
 =======
 
-* improve CLientAPI constructor
-* fix AUTHDIR constant to multiple platform
-* updating so if user passes a token that is the only auth attempted (#41)
-* adding the recommended way of authentication for ManageIQ. (#38)
-* bypass creating an api connection when the help parameter is given (#39)
-* add compatibility module (#36)
-* add connection to manageiq server (#35)
-* add configuration handling
-* add license notices to all modules (#22)
-* initial content for the contributing guidelines (#20)
-* adding information on how to setup your development environment (#8)
-* enable travis ci to verify code patches (#7)
-* initial cli structure proposal (#1)
-* add missing static folder for building sphinx docs (#6)
-* ignore pycharm project settings (#2)
-* add initial project structure
 * Initial commit
