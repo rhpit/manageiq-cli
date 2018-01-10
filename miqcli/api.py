@@ -48,7 +48,7 @@ class ClientAPI(object):
         # create miqcli folder if it doesn't exist
         try:
             os.makedirs(os.path.dirname(AUTHDIR))
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST:
                 raise RuntimeError('Error creating user miqcli folder.')
 
@@ -140,7 +140,7 @@ class ClientAPI(object):
         try:
             with open(AUTHDIR, "w") as fp:
                 fp.write(token)
-        except OSError, e:
+        except OSError as e:
             raise RuntimeError('Error setting token file. %s' % e)
 
     @staticmethod
@@ -151,7 +151,7 @@ class ClientAPI(object):
         try:
             with open(AUTHDIR, "r") as fp:
                 token = fp.read().strip()
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.ENOENT:
                 raise RuntimeError('Error reading local auth file.')
             return None
@@ -216,7 +216,7 @@ class ClientAPI(object):
             self._client = ManageIQClient(self._url,
                                           dict(token=self._token),
                                           verify_ssl=self._verify_ssl)
-        except APIException, e:
+        except APIException as e:
             print('Error creating library pointer - {0}'.format(e.message))
-        except Exception, e:
+        except Exception:
             raise
