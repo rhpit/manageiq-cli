@@ -24,8 +24,6 @@ class Collection(ClientAPI):
     Main option is to save the settings
     """
 
-    _settings = None
-
     def __init__(self, settings):
         """
         :param settings: MIQ settings
