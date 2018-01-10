@@ -21,7 +21,7 @@ import errno
 from types import FunctionType
 
 
-__all__ = ['get_class_methods']
+__all__ = ['Config', 'get_class_methods']
 
 
 class Config(dict):
