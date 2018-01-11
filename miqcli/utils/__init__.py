@@ -20,6 +20,7 @@ import ast
 import errno
 from types import FunctionType
 
+from miqcli.utils import log
 
 __all__ = ['Config', 'get_class_methods']
 
@@ -59,12 +60,14 @@ class Config(dict):
             else:
                 if silent:
                     return False
-                raise RuntimeError("Config file: {0} does not exist"
-                                   "".format(filename))
+                log.error('Configuration file: {0} does not exist.'.
+                          format(filename), abort=True)
         else:
             if silent:
                 return False
-            raise RuntimeError("Set a valid configuration file to load.")
+            log.error('Please pass a valid configuration file to load.',
+                      abort=True)
+
         try:
             with open(filename, mode='rb') as fp:
                 config_data = yaml.load(fp)
@@ -73,13 +76,15 @@ class Config(dict):
         except yaml.YAMLError as e:
             if silent:
                 return False
-            raise RuntimeError('Problem to load yaml content from file '
-                               '{0}'.format(e.sterror))
+            log.debug('Standard error: {0}'.format(e.sterror))
+            log.error('A problem occurred while loading configuration '
+                      'file.', abort=True)
         except IOError as e:
             if silent and e.errno in (errno.ENOENT, errno.EISDIR):
                 return False
-            raise RuntimeError('Unable to load configuration file '
-                               '{0}'.format(e.strerror))
+            log.debug('Standard error: {0}'.format(e.sterror))
+            log.error('Failed to load configuration file.',
+                      abort=True)
 
     def from_env(self, variable_name, silent=False):
         """
@@ -94,8 +99,8 @@ class Config(dict):
         if not ev:
             if silent:
                 return False
-            raise RuntimeError('The environment variable {0} is not set'
-                               ''.format(variable_name))
+            log.error('The environment variable {0} is not defined.'.
+                      format(variable_name), abort=True)
         config_data = ast.literal_eval(ev)
         for key in config_data:
             self[key] = config_data[key]

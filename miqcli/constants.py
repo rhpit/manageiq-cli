@@ -28,6 +28,7 @@ DEFAULT_CONFIG = {
     'username': 'admin',
     'password': 'smartvm',
     'url': 'https://localhost:8443',
-    'enable_ssl_verify': False
+    'enable_ssl_verify': False,
+    'verbose': False
 }
 AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")

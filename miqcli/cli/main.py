@@ -244,24 +244,29 @@ cli = ManageIQ(
         ),
         click.Option(
             param_decls=['--token'],
-            help='token used for authentication to the server.'
+            help='Token used for authentication to the server.'
         ),
         click.Option(
             param_decls=['--url'],
-            help='url for the ManageIQ appliance.'
+            help='URL for the ManageIQ appliance.'
         ),
         click.Option(
             param_decls=['--username'],
-            help='username used for authentication to the server.'
+            help='Username used for authentication to the server.'
         ),
         click.Option(
             param_decls=['--password'],
-            help='password used for authentication to the server.'
+            help='Password used for authentication to the server.'
         ),
         click.Option(
             param_decls=['--enable-ssl-verify/--disable-ssl-verify'],
             default=None,
-            help='enable or disable ssl verification, default is on.'
+            help='Enable or disable ssl verification, default is on.'
+        ),
+        click.Option(
+            param_decls=['--verbose'],
+            is_flag=True,
+            help='Verbose mode.'
         )
     ]
 )
