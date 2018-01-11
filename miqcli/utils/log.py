@@ -52,7 +52,7 @@ def debug(message):
     :param message: Message content
     :type message: str
     """
-    if click.get_current_context().parent.params['verbose']:
+    if click.get_current_context().find_root().params['verbose']:
         __log(message, 'debug')
 
 
