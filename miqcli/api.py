@@ -23,7 +23,7 @@ from requests.auth import HTTPBasicAuth
 from manageiq_client.api import APIException, ManageIQClient
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import AUTHDIR
+from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
 
 
 class ClientAPI(object):
@@ -53,16 +53,15 @@ class ClientAPI(object):
                 raise RuntimeError('Error creating user miqcli folder.')
 
         # url details
-        self._url = settings.get('url', None)
-        if self._url is None:
-            self._url = 'https://localhost:8443'
+        self._url = settings.get('url', DEFAULT_CONFIG['url'])
         self._url = self._url + '/api'
-        self._verify_ssl = settings.get('enable_ssl_verify', False)
+        self._verify_ssl = settings.get('enable_ssl_verify',
+                                        DEFAULT_CONFIG['enable_ssl_verify'])
 
         # authentication details - username and password should
         # be set in case a given token is invalid.
-        self._username = settings.get('username', None)
-        self._password = settings.get('password', None)
+        self._username = settings.get('username', DEFAULT_CONFIG['username'])
+        self._password = settings.get('password', DEFAULT_CONFIG['password'])
 
         self._token = settings.get('token', None)
 
