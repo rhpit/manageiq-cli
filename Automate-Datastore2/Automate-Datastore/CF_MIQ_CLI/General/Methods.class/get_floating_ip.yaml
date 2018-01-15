@@ -1,0 +1,12 @@
+---
+object_type: instance
+version: 1.0
+object:
+  attributes:
+    display_name: get_floating_ip
+    name: get_floating_ip
+    inherits: 
+    description: Get/Create a Openstack Floating IP
+  fields:
+  - execute:
+      value: get_floating_ip
