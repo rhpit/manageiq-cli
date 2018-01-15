@@ -10,6 +10,12 @@ Welcome to manageiq-cli's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   introduction
+   installation
+   quickstart
+   cli/commands
+   api
+
 
 
 Indices and tables

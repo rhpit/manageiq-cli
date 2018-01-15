@@ -135,8 +135,9 @@ class SubCollections(click.MultiCommand):
     """Sub-collections.
 
     Class handles creating the click sub-command for the given parent command
-    (collection) with all its provided options. I.e.
-        - $ miqcli <parent_command> <sub_command>
+    (collection) with all its provided options, e.g.::
+
+        miqcli <parent_command> <sub_command>
     """
 
     def __init__(self, collection_cls):
