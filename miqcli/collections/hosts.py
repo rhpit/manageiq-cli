@@ -14,16 +14,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Hosts collections."""
 
+    @client_api
     def query(self):
         """Query."""
         raise NotImplementedError
 
+    @client_api
     def edit(self):
         """Edit."""
         raise NotImplementedError

@@ -16,14 +16,17 @@
 
 import os
 
+import click
+
 VERSION = '0.0.0'
 PACKAGE = 'miqcli'
 PYPI = 'https://pypi.python.org/pypi'
 PROJECT_ROOT = os.path.dirname(__file__)
 COLLECTIONS_ROOT = os.path.join(PROJECT_ROOT, 'collections')
 COLLECTIONS_PACKAGE = PACKAGE + '.' + 'collections'
-MIQCLI_CFG_FILE_LOC = '/etc/miqcli'
-MIQCLI_CFG_NAME = 'miqcli'
+CFG_DIR = '/etc/miqcli'
+CFG_NAME = 'miqcli'
+CFG_FILE_EXT = ['.yml', '.yaml']
 DEFAULT_CONFIG = {
     'username': 'admin',
     'password': 'smartvm',
@@ -32,3 +35,37 @@ DEFAULT_CONFIG = {
     'verbose': False
 }
 AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
+
+GLOBAL_PARAMS = [
+    click.Option(
+        param_decls=['--version'],
+        is_flag=True,
+        help='Show version and exit.'
+    ),
+    click.Option(
+        param_decls=['--token'],
+        help='Token used for authentication to the server.'
+    ),
+    click.Option(
+        param_decls=['--url'],
+        help='URL for the ManageIQ appliance.'
+    ),
+    click.Option(
+        param_decls=['--username'],
+        help='Username used for authentication to the server.'
+    ),
+    click.Option(
+        param_decls=['--password'],
+        help='Password used for authentication to the server.'
+    ),
+    click.Option(
+        param_decls=['--enable-ssl-verify/--disable-ssl-verify'],
+        default=None,
+        help='Enable or disable ssl verification, default is on.'
+    ),
+    click.Option(
+        param_decls=['--verbose'],
+        is_flag=True,
+        help='Verbose mode.'
+    )
+]

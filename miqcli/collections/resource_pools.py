@@ -14,12 +14,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Resource pools collections."""
 
+    @client_api
     def query(self):
         """Query."""
         raise NotImplementedError

@@ -23,9 +23,10 @@ from importlib import import_module
 import click
 from os import listdir
 
+from miqcli.api import ClientAPI
 from miqcli._compat import ServerProxy
-from miqcli.constants import COLLECTIONS_PACKAGE, COLLECTIONS_ROOT, PACKAGE, \
-    PYPI, VERSION, MIQCLI_CFG_FILE_LOC, DEFAULT_CONFIG, MIQCLI_CFG_NAME
+from miqcli.constants import CFG_DIR, CFG_NAME, COLLECTIONS_PACKAGE, \
+    COLLECTIONS_ROOT, DEFAULT_CONFIG, GLOBAL_PARAMS, PACKAGE, PYPI, VERSION
 from miqcli.utils import Config, get_class_methods
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -37,6 +38,14 @@ class ManageIQ(click.MultiCommand):
     ::
     Class is the main entry point to the miq cli.
     """
+
+    def __init__(self):
+        """Constructor."""
+        super(ManageIQ, self).__init__(
+            context_settings=dict(default_map=DEFAULT_CONFIG),
+            help=self.__doc__.split('::')[0].strip(),
+            params=GLOBAL_PARAMS
+        )
 
     def list_commands(self, ctx):
         """Return a list of available commands.
@@ -62,9 +71,9 @@ class ManageIQ(click.MultiCommand):
         """Return the command (collections) object based on the command
         selected to run.
 
-        Imports the collection module based on the command to run and creates
-        a collection object. Which then returns the sub command to be run for
-        that specific collection.
+        Imports the collection module based on the command to run and gets
+        the collection class. The collection class is then passed to the
+        sub-command class.
 
         :param ctx: Click context.
         :type ctx: Namespace
@@ -74,8 +83,8 @@ class ManageIQ(click.MultiCommand):
         :rtype: object
         """
         miq_module = import_module(COLLECTIONS_PACKAGE + '.' + name)
-        collection = miq_module.Collections(ctx.params)
-        return SubCollections(collection, collection.__doc__)
+        collection_cls = getattr(miq_module, 'Collections')
+        return SubCollections(collection_cls)
 
     def invoke(self, ctx):
         """Invoke the command selected.
@@ -130,16 +139,14 @@ class SubCollections(click.MultiCommand):
         - $ miqcli <parent_command> <sub_command>
     """
 
-    def __init__(self, collection, help):
+    def __init__(self, collection_cls):
         """Constructor.
 
-        :param collection: Collection object.
-        :type collection: object
-        :param help: Sub-command help message displayed in the cli.
-        :type help: str (class docstring)
+        :param collection: Collection class.
+        :type collection: class
         """
-        super(SubCollections, self).__init__(help=help)
-        self.collection = collection
+        super(SubCollections, self).__init__(help=collection_cls.__doc__)
+        self.collection_cls = collection_cls
 
     def list_commands(self, ctx):
         """Return a list of available sub-commands for the parent command.
@@ -147,7 +154,7 @@ class SubCollections(click.MultiCommand):
         Traverses the collection class to get all method names. Class method
         names are the names of the sub-commands for the parent command.
         """
-        return get_class_methods(self.collection.__class__)
+        return get_class_methods(self.collection_cls)
 
     @staticmethod
     def convert_to_function(method):
@@ -186,7 +193,9 @@ class SubCollections(click.MultiCommand):
         :return: Click command object.
         :rtype: object
         """
-        method = getattr(self.collection, name)
+        collection = self.collection_cls()
+
+        method = getattr(collection, name)
         new_method = self.convert_to_function(method)
 
         params = getattr(method, '__click_params__', [])
@@ -206,70 +215,55 @@ class SubCollections(click.MultiCommand):
     def invoke(self, ctx):
         """Invoke the sub-command selected.
 
-        Runs the sub-command given with all its arguments. Before it invokes
-        the sub-command action to run, it will attempt to establish a
-        connection to ManageIQ.
+        This is where things start to get real. We load configuration
+        settings based on the order preference, update the click context with
+        the final configuration settings, connect to the ManageIQ server and
+        then invoke the command.
+
+        When the help parameter is given for any sub-command, we do not
+        attempt connection to ManageIQ server. Only show params and exit.
 
         :param ctx: Click context.
         :type ctx: Namespace
         """
         if '--help' not in ctx.args:
-            # help does not need an api connection, it shows params and exits
-            self.collection.connect()
+            # get parent context
+            parent_ctx = click.get_current_context().find_root()
+
+            # create config object
+            config = Config(verbose=parent_ctx.params['verbose'])
+
+            # load config settings in the following order:
+            #   1. Default configuration settings
+            #       - managed by ManageIQ CLI constants
+            #   2. CLI parameters
+            #       - $ miqcli --options
+            #   3. YAML configuration @ /etc/miqcli/miqcli.[yml|yaml]
+            #   4. YAML configuration @ ./miqcli.[yml|yaml]
+            #   5. Environment variable
+            #       - $ export MIQ_CFG="{'key': 'val'}"
+            config.from_yml(CFG_DIR, CFG_NAME)
+            config.from_yml(os.path.join(os.getcwd()), CFG_NAME)
+            config.from_env('MIQ_CFG')
+
+            # set the final parameters after loading config settings
+            click.get_current_context().find_root().params.update(
+                dict(config)
+            )
+
+            # create the client api object
+            client = ClientAPI(click.get_current_context().find_root().params)
+
+            # connect to manageiq server
+            client.connect()
+
+            # save the client api pointer reference in the parent context for
+            # each collection to access
+            setattr(parent_ctx, 'client_api', client)
+            del parent_ctx
+
         super(SubCollections, self).invoke(ctx)
 
 
-# set context settings w/ our configuration
-config = Config(DEFAULT_CONFIG)
-
-# check lowest precedence /etc first
-config.from_yaml(os.path.join(MIQCLI_CFG_FILE_LOC, MIQCLI_CFG_NAME),
-                 silent=True)
-
-# next check the local path
-config.from_yaml(os.path.join(os.getcwd(), MIQCLI_CFG_NAME),
-                 silent=True)
-
-# next check the env var
-config.from_env('MIQ_CFG', silent=True)
-
-CONTEXT_SETTINGS = dict(default_map=config)
-
 # it all begins here..
-cli = ManageIQ(
-    context_settings=CONTEXT_SETTINGS,
-    help=ManageIQ.__doc__.split('::')[0].strip(),
-    params=[
-        click.Option(
-            param_decls=['--version'],
-            is_flag=True,
-            help='Show version and exit.'
-        ),
-        click.Option(
-            param_decls=['--token'],
-            help='Token used for authentication to the server.'
-        ),
-        click.Option(
-            param_decls=['--url'],
-            help='URL for the ManageIQ appliance.'
-        ),
-        click.Option(
-            param_decls=['--username'],
-            help='Username used for authentication to the server.'
-        ),
-        click.Option(
-            param_decls=['--password'],
-            help='Password used for authentication to the server.'
-        ),
-        click.Option(
-            param_decls=['--enable-ssl-verify/--disable-ssl-verify'],
-            default=None,
-            help='Enable or disable ssl verification, default is on.'
-        ),
-        click.Option(
-            param_decls=['--verbose'],
-            is_flag=True,
-            help='Verbose mode.'
-        )
-    ]
-)
+cli = ManageIQ()

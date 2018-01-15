@@ -14,16 +14,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Automate domains collections."""
 
+    @client_api
     def query(self):
         """Query."""
         raise NotImplementedError
 
+    @client_api
     def refresh_from_source(self):
         """Refresh from source."""
         raise NotImplementedError

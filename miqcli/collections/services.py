@@ -14,64 +14,78 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Services collections."""
 
+    @client_api
     def query(self):
         """Query."""
         raise NotImplementedError
 
+    @client_api
     def create(self):
         """Create."""
         raise NotImplementedError
 
+    @client_api
     def edit(self):
         """Edit."""
         raise NotImplementedError
 
+    @client_api
     def retire(self):
         """Retire."""
         raise NotImplementedError
 
+    @client_api
     def set_ownership(self):
         """Set ownership."""
         raise NotImplementedError
 
+    @client_api
     def delete(self):
         """Delete."""
         raise NotImplementedError
 
+    @client_api
     def start(self):
         """Start."""
         raise NotImplementedError
 
+    @client_api
     def stop(self):
         """Stop."""
         raise NotImplementedError
 
+    @client_api
     def suspend(self):
         """Suspend."""
         raise NotImplementedError
 
+    @client_api
     def assign_tags(self):
         """Assign tags."""
         raise NotImplementedError
 
+    @client_api
     def unassign_tags(self):
         """Unassign tags."""
         raise NotImplementedError
 
+    @client_api
     def add_resource(self):
         """Add resource."""
         raise NotImplementedError
 
+    @client_api
     def remote_all_resources(self):
         """Remove all resources."""
         raise NotImplementedError
 
+    @client_api
     def remove_resource(self):
         """Remove resource."""
         raise NotImplementedError
