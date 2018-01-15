@@ -20,11 +20,7 @@ from miqcli.api import ClientAPI
 class Collection(ClientAPI):
     """
     Collection Class
-
-    Main option is to save the settings
     """
-
-    _settings = None
 
     def __init__(self, settings):
         """
@@ -32,7 +28,3 @@ class Collection(ClientAPI):
         :type settings: dict
         """
         super(Collection, self).__init__(settings)
-
-    def connect(self):
-        """Create a connection to the ManageIQ server."""
-        super(Collection, self).connect()
