@@ -190,8 +190,7 @@ class ClientAPI(object):
         the client will exit with -1.
         """
         if self._username is None or self._password is None:
-            log.error('You need to set username and password.')
-            exit(-1)
+            log.error('You need to set username and password.', abort=True)
         auth_endpoint = self._url + "/auth"
         try:
             output = requests.get(auth_endpoint,
