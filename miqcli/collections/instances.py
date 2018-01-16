@@ -14,44 +14,53 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Instances collections."""
 
+    @client_api
     def query(self):
         """Query."""
         raise NotImplementedError
 
+    @client_api
     def terminate(self):
         """Terminate."""
         raise NotImplementedError
 
+    @client_api
     def stop(self):
         """Stop."""
         raise NotImplementedError
 
+    @client_api
     def start(self):
         """Start."""
         raise NotImplementedError
 
+    @client_api
     def pause(self):
         """Pause."""
         raise NotImplementedError
 
+    @client_api
     def suspend(self):
         """Suspend."""
         raise NotImplementedError
 
+    @client_api
     def shelve(self):
         """Shelve."""
         raise NotImplementedError
 
+    @client_api
     def reboot_guest(self):
         """Reboot guest."""
         raise NotImplementedError
 
+    @client_api
     def reset(self):
         """Reset."""
         raise NotImplementedError

@@ -14,20 +14,23 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Automation requests collections."""
 
+    @client_api
     def create(self):
         """Create."""
         raise NotImplementedError
 
+    @client_api
     def approve(self):
         """Approve."""
         raise NotImplementedError
 
+    @client_api
     def deny(self):
         """Deny."""
         raise NotImplementedError

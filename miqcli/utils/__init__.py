@@ -17,93 +17,79 @@
 import os
 import yaml
 import ast
-import errno
 from types import FunctionType
 
+import click
+
+from miqcli.constants import CFG_FILE_EXT
 from miqcli.utils import log
 
-__all__ = ['Config', 'get_class_methods']
+__all__ = ['Config', 'get_class_methods', 'get_client_api_pointer']
 
 
 class Config(dict):
-    """
-    Config class
+    """Configuration class."""
 
-    :param dict: dictionary of configuration values
-    :type dict: dictionary
-    """
+    def __init__(self, defaults=None, verbose=False):
+        """Constructor.
 
-    def __init__(self, defaults=None):
+        :param defaults: base dictionary configuration
+        :type defaults: dict
+        :param verbose: verbosity mode
+        :type verbose: bool
         """
-        initialize the class
-        :param defaults: initial dictionary of value
-        :type defaults: dictionary
-        """
-        dict.__init__(self, defaults or {})
+        super(Config, self).__init__(defaults or {})
+        self._verbose = verbose
 
-    def from_yaml(self, filename, silent=False):
-        """
-        import the config data from a yaml file
-        :param filename: file path to config
-        :type: filename: str of a file path
-        :param silent: silent errors or not
-        :type silent: Boolean
-        :return:
-        """
-        # check for *.yml or *.yaml extension
-        if filename:
-            split_filename = os.path.splitext(filename)
-            if os.path.isfile(split_filename[0] + ".yaml"):
-                filename = split_filename[0] + ".yaml"
-            elif os.path.isfile(split_filename[0] + ".yml"):
-                filename = split_filename[0] + ".yml"
-            else:
-                if silent:
-                    return False
-                log.error('Configuration file: {0} does not exist.'.
-                          format(filename), abort=True)
-        else:
-            if silent:
-                return False
-            log.error('Please pass a valid configuration file to load.',
-                      abort=True)
+    def from_yml(self, directory, filename):
+        """Load configuration settings from yml file.
 
+        :param directory: directory to scan for config file
+        :type directory: str
+        :param filename: config filename
+        :type filename: str
+        """
+        _cfg_file = None
+
+        # verify config file exists
+        for entry in os.listdir(directory):
+            _file = os.path.splitext(entry)
+            if _file[0] == filename and _file[1] in CFG_FILE_EXT:
+                _cfg_file = os.path.join(directory, entry)
+                break
+
+        if _cfg_file is None and self._verbose:
+            log.warning('Config file at {0} is undefined.'.format(directory))
+            return
+        if _cfg_file is None:
+            return
+
+        # load config
         try:
-            with open(filename, mode='rb') as fp:
+            with open(_cfg_file, mode='rb') as fp:
                 config_data = yaml.load(fp)
-                for key in config_data:
-                    self[key] = config_data[key]
+                if config_data is not None:
+                    for key, value in config_data.items():
+                        self[key] = value
+                else:
+                    log.warning('Config file {0} is empty.'.format(_cfg_file))
         except yaml.YAMLError as e:
-            if silent:
-                return False
-            log.debug('Standard error: {0}'.format(e.sterror))
-            log.error('A problem occurred while loading configuration '
-                      'file.', abort=True)
-        except IOError as e:
-            if silent and e.errno in (errno.ENOENT, errno.EISDIR):
-                return False
-            log.debug('Standard error: {0}'.format(e.sterror))
-            log.error('Failed to load configuration file.',
-                      abort=True)
+            if self._verbose:
+                log.debug('Standard error: {0}'.format(e.sterror))
+                log.error('Error in config {0}'.format(_cfg_file), abort=True)
 
-    def from_env(self, variable_name, silent=False):
+    def from_env(self, var):
+        """Load configuration settings from environment variable.
+
+        :param var: variable name in dict syntax
+        :type var: str
         """
-        import the config data from an env variable set as a dictionary
-        :param variable_name: name of the env_var
-        :type variable_name: str
-        :param silent: silent errors or not
-        :type silent: Boolean
-        :return:
-        """
-        ev = os.environ.get(variable_name)
-        if not ev:
-            if silent:
-                return False
-            log.error('The environment variable {0} is not defined.'.
-                      format(variable_name), abort=True)
-        config_data = ast.literal_eval(ev)
-        for key in config_data:
-            self[key] = config_data[key]
+        try:
+            for key, value in ast.literal_eval(os.environ[var]).items():
+                self[key] = value
+        except KeyError:
+            if self._verbose:
+                log.warning('Config environment variable is undefined.')
 
 
 def get_class_methods(cls):
@@ -117,6 +103,7 @@ def get_class_methods(cls):
     :rtype: list
     """
     methods = list()
+
     for key, value in cls.__dict__.items():
         if not isinstance(value, FunctionType):
             continue
@@ -125,3 +112,15 @@ def get_class_methods(cls):
         methods.append(key)
     methods.sort()
     return methods
+
+
+def get_client_api_pointer():
+    """Return the client api pointer.
+
+    :return: MIQ client api pointer
+    :rtype: object
+    """
+    try:
+        return click.get_current_context().find_root().client_api
+    except AttributeError:
+        log.error('Unable to get client_api pointer.', abort=True)

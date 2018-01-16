@@ -14,36 +14,43 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli.collections import Collection
+from miqcli.decorators import client_api
 
 
-class Collections(Collection):
+class Collections(object):
     """Service requests collections."""
 
+    @client_api
     def query(self):
         """Query."""
         raise NotImplementedError
 
+    @client_api
     def approve(self):
         """Approve."""
         raise NotImplementedError
 
+    @client_api
     def deny(self):
         """Deny."""
         raise NotImplementedError
 
+    @client_api
     def delete(self):
         """Delete."""
         raise NotImplementedError
 
+    @client_api
     def add_approver(self):
         """Add approver."""
         raise NotImplementedError
 
+    @client_api
     def remove_approver(self):
         """Remove approver."""
         raise NotImplementedError
 
+    @client_api
     def edit(self):
         """Edit."""
         raise NotImplementedError
