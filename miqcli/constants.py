@@ -13,20 +13,43 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
+"""
+miqcli.constants values will differ from installation to installation.
+"""
 import os
 
 import click
+from pbr.packaging import get_version
 
-VERSION = '0.0.0'
+
+#: name of miqcli package
 PACKAGE = 'miqcli'
+
+#: Installed version of miqcli
+VERSION = get_version(PACKAGE)
+
+#: base URL of PyPI
 PYPI = 'https://pypi.python.org/pypi'
+
+#: current filesystem root of miqcli source
 PROJECT_ROOT = os.path.dirname(__file__)
+
+#: current filesystem root of miqcli.collections package
 COLLECTIONS_ROOT = os.path.join(PROJECT_ROOT, 'collections')
+
+#: miqcli collections package name
 COLLECTIONS_PACKAGE = PACKAGE + '.' + 'collections'
+
+#: expected basedir for systemwide miqcli config file
 CFG_DIR = '/etc/miqcli'
+
+#: expected name for miqcli config file
 CFG_NAME = 'miqcli'
+
+#: acceptable file extensions for config file
 CFG_FILE_EXT = ['.yml', '.yaml']
+
+#: default config for miqcli API client
 DEFAULT_CONFIG = {
     'username': 'admin',
     'password': 'smartvm',
@@ -34,8 +57,11 @@ DEFAULT_CONFIG = {
     'enable_ssl_verify': False,
     'verbose': False
 }
+
+#: filesystem root for miqcli authentication store
 AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
 
+#: cli entry point click parameters
 GLOBAL_PARAMS = [
     click.Option(
         param_decls=['--version'],
