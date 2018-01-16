@@ -1,0 +1,10 @@
+---
+object_type: namespace
+version: 1.0
+object:
+  attributes:
+    name: General
+    description: General Content
+    display_name: 
+    priority: 
+    enabled: 

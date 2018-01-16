@@ -1,0 +1,12 @@
+---
+object_type: method
+version: 1.0
+object:
+  attributes:
+    name: allocate_floating_ip
+    display_name: allocate_floating_ip
+    description: 
+    scope: instance
+    language: ruby
+    location: inline
+  inputs: []
