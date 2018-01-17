@@ -2,7 +2,7 @@
 A ManageIQ Command-Line Client
 ==============================
 
-|docs-badge|
+|docs-badge| |build-badge|
 
 Documentation
 -------------
@@ -17,3 +17,8 @@ The latest documentation is available on
     :alt: Documentation Status
     :scale: 100%
     :target: https://rhpit-manageiq-cli.readthedocs-hosted.com/en/latest/
+
+.. |build-badge| image:: https://travis-ci.org/rhpit/manageiq-cli.svg?branch=master
+    :alt: Build Status
+    :scale: 100%
+    :target: https://travis-ci.org/rhpit/manageiq-cli
