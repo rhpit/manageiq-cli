@@ -76,7 +76,7 @@ class Config(dict):
         except yaml.YAMLError as e:
             if self._verbose:
                 log.debug('Standard error: {0}'.format(e.sterror))
-                log.error('Error in config {0}'.format(_cfg_file), abort=True)
+                log.abort('Error in config {0}.'.format(_cfg_file))
 
     def from_env(self, var):
         """Load configuration settings from environment variable.
@@ -123,4 +123,4 @@ def get_client_api_pointer():
     try:
         return click.get_current_context().find_root().client_api
     except AttributeError:
-        log.error('Unable to get client_api pointer.', abort=True)
+        log.error('Unable to get client api pointer.')
