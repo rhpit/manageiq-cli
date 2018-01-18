@@ -17,16 +17,22 @@
 miqcli.constants values will differ from installation to installation.
 """
 import os
+import pkg_resources
 
 import click
-from pbr.packaging import get_version
 
 
 #: name of miqcli package
 PACKAGE = 'miqcli'
 
-#: Installed version of miqcli
-VERSION = get_version(PACKAGE)
+try:
+    #: Installed version of miqcli
+    _miqcli_distribution = pkg_resources.get_distribution(PACKAGE)
+    VERSION = str(_miqcli_distribution.parsed_version)
+except pkg_resources.DistributionNotFound:
+    # This should be very unlikely, as it means this module is being
+    # imported without the miqcli package being installed
+    VERSION = '0.0.0dev1'
 
 #: base URL of PyPI
 PYPI = 'https://pypi.python.org/pypi'
