@@ -26,6 +26,8 @@ from requests.exceptions import ConnectionError
 from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
 from miqcli.utils import log
 
+__all__ = ['ClientAPI']
+
 
 class ClientAPI(object):
     """ManageIQ API client class.
@@ -51,7 +53,7 @@ class ClientAPI(object):
             os.makedirs(os.path.dirname(AUTHDIR))
         except OSError as e:
             if e.errno != errno.EEXIST:
-                log.error('Error creating user miqcli folder', abort=True)
+                log.abort('Error creating user miqcli folder.')
 
         # url details
         self._url = settings.get('url', DEFAULT_CONFIG['url'])
@@ -124,8 +126,7 @@ class ClientAPI(object):
         else:
             # check if given token is valid
             if not self._valid_token(token):
-                log.error('Given token {0} is not valid.'.format(token),
-                          abort=True)
+                log.abort('Given token {0} is not valid.'.format(token))
 
         # always save the token in the auth file
         self._set_auth_file(token)
@@ -141,7 +142,7 @@ class ClientAPI(object):
             with open(AUTHDIR, "w") as fp:
                 fp.write(token)
         except OSError as e:
-            log.error('Error setting token file. %s' % e, abort=True)
+            log.abort('Error setting token file. %s' % e)
 
     @staticmethod
     def _get_from_auth_file():
@@ -153,7 +154,7 @@ class ClientAPI(object):
                 token = fp.read().strip()
         except IOError as e:
             if e.errno != errno.ENOENT:
-                log.error('Error reading local auth file.', abort=True)
+                log.abort('Error reading local auth file.')
             return None
         return token
 
@@ -190,7 +191,7 @@ class ClientAPI(object):
         the client will exit with -1.
         """
         if self._username is None or self._password is None:
-            log.error('You need to set username and password.', abort=True)
+            log.abort('You need to set username and password.')
         auth_endpoint = self._url + "/auth"
         try:
             output = requests.get(auth_endpoint,
@@ -201,11 +202,11 @@ class ClientAPI(object):
             if output.status_code == 200:
                 return output.json()["auth_token"]
             else:
-                log.error('Unsuccessful attempt to authenticate: '
-                          '{0}'.format(output.status_code), abort=True)
+                log.abort('Unsuccessful attempt to authenticate: '
+                          '{0}'.format(output.status_code))
         except ConnectionError:
-            log.error('Error connecting to service. Check your connection '
-                      'settings.', abort=True)
+            log.abort('Error connecting to service. Check your connection '
+                      'settings.')
 
     def _connect(self):
         """
@@ -216,7 +217,6 @@ class ClientAPI(object):
                                           dict(token=self._token),
                                           verify_ssl=self._verify_ssl)
         except APIException as e:
-            log.error('Error creating library pointer - '
-                      '{0}'.format(e.message), abort=True)
+            log.abort('Error creating library pointer - {0}'.format(e.message))
         except Exception as e:
-            log.error('{0}'.format(e.message), abort=True)
+            log.abort('{0}'.format(e.message))

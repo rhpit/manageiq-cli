@@ -16,7 +16,7 @@
 
 import click
 
-__all__ = ['info', 'debug', 'error', 'warning']
+__all__ = ['info', 'debug', 'error', 'warning', 'abort']
 
 
 def __log(message, level, bold=False, fg=None):
@@ -30,7 +30,7 @@ def __log(message, level, bold=False, fg=None):
     :param level: Logging level
     :type level: str
     :param bold: Bold style text
-    :type bool: bool
+    :type bold: bool
     :param fg: Text foreground color
     :type fg: str
     """
@@ -38,7 +38,11 @@ def __log(message, level, bold=False, fg=None):
 
 
 def info(message):
-    """Prints info level messages to the consoles standard output.
+    """Info level messages.
+
+    Info messages should be used when the program needs to provide the user
+    with information at runtime. I.e. providing the user with a message
+    stating which action is being processed, etc..
 
     :param message: Message to print
     :type message: str
@@ -47,7 +51,13 @@ def info(message):
 
 
 def debug(message):
-    """Prints debug level messages.
+    """Debug level messages.
+
+    Debug messages should be used when the program wants to provide the
+    user with more information at runtime. These can be good for explaining
+    step by step a request being processed (if the user wishes to see the
+    process). These messages by default will not be logged and only will be
+    logged when --verbose option is enabled.
 
     :param message: Message content
     :type message: str
@@ -56,25 +66,42 @@ def debug(message):
         __log(message, 'debug')
 
 
-def error(message, abort=False, rc=1):
-    """Prints error level messages.
+def error(message):
+    """Error level messages.
+
+    Error messages should be used when the program needs to alert the user
+    when something went wrong. I.e. a request was unable to be processed,
+    connection failed, etc..
 
     :param message: Message content
     :type message: str
-    :param abort: Abort the program
-    :type abort: bool
-    :param rc: Exit code to abort with
-    :type rc: int
     """
     __log(message, 'error', bold=True, fg='red')
-    if abort:
-        raise SystemExit(rc)
 
 
 def warning(message):
-    """Prints warning level messages.
+    """Logs warning level messages.
+
+    Warning messages should be used when the program needs to alert the user
+    that it may not function as designed. I.e. user did not supply the
+    correct values, etc..
 
     :param message: Message content
     :type message: str
     """
     __log(message, 'warning', fg='yellow')
+
+
+def abort(message, rc=1):
+    """Logs error level message and aborts the program.
+
+    Abort should be self explanatory. It will abort the program when it is
+    unable to proceed processing the request given.
+
+    :param message: Message content
+    :type message: str
+    :param rc: Exit code to abort with
+    :type rc: int
+    """
+    error(message)
+    raise SystemExit(rc)
