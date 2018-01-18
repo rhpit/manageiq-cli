@@ -27,7 +27,8 @@ from miqcli.api import ClientAPI
 from miqcli._compat import ServerProxy
 from miqcli.constants import CFG_DIR, CFG_NAME, COLLECTIONS_PACKAGE, \
     COLLECTIONS_ROOT, DEFAULT_CONFIG, GLOBAL_PARAMS, PACKAGE, PYPI, VERSION
-from miqcli.utils import Config, get_class_methods
+from miqcli.utils import Config, get_class_methods, log, \
+    is_default_config_used
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -251,6 +252,10 @@ class SubCollections(click.MultiCommand):
             click.get_current_context().find_root().params.update(
                 dict(config)
             )
+
+            # notify user if default config is used
+            if is_default_config_used():
+                log.warning('Default configuration is used.')
 
             # create the client api object
             client = ClientAPI(click.get_current_context().find_root().params)
