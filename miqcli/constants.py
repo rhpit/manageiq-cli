@@ -60,8 +60,7 @@ DEFAULT_CONFIG = {
     'username': 'admin',
     'password': 'smartvm',
     'url': 'https://localhost:8443',
-    'enable_ssl_verify': False,
-    'verbose': False
+    'enable_ssl_verify': False
 }
 
 #: filesystem root for miqcli authentication store

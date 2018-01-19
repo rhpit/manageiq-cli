@@ -24,7 +24,8 @@ import click
 from miqcli.constants import CFG_FILE_EXT
 from miqcli.utils import log
 
-__all__ = ['Config', 'get_class_methods', 'get_client_api_pointer']
+__all__ = ['Config', 'get_class_methods', 'get_client_api_pointer',
+           'is_default_config_used']
 
 
 class Config(dict):
@@ -124,3 +125,26 @@ def get_client_api_pointer():
         return click.get_current_context().find_root().client_api
     except AttributeError:
         log.error('Unable to get client api pointer.')
+
+
+def is_default_config_used():
+    """Is the default configuration used?
+
+    :return: True - defaults used, False - defaults not used
+    :rtype: bool
+    """
+    status = True
+
+    # get parent context
+    ctx = click.get_current_context().find_root()
+
+    # compare default config settings with final parameters
+    for key, value in ctx.default_map.items():
+        if value == ctx.params[key]:
+            # option values match
+            continue
+        else:
+            # option values differ
+            status = False
+            break
+    return status
