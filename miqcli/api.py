@@ -73,7 +73,6 @@ class ClientAPI(object):
         self._token = settings.get('token', None)
 
         self._client = None
-        self._name = self.__module__.split(".")[-1]
 
     @property
     def token(self):
