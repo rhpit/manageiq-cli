@@ -25,7 +25,8 @@ from miqcli.constants import CFG_FILE_EXT
 from miqcli.utils import log
 
 __all__ = ['Config', 'get_class_methods', 'get_client_api_pointer',
-           'is_default_config_used']
+           'is_default_config_used', 'display_commands',
+           '_abort_invalid_commands']
 
 
 class Config(dict):
@@ -166,3 +167,16 @@ def display_commands(ctx):
     commands = formatter.getvalue().rstrip('\n').split('Commands:')[1]
 
     print('Commands:\n {0}'.format(commands))
+
+
+def _abort_invalid_commands(ctx, name):
+    """Abort the CLI when an invalid command is supplied.
+
+    :param ctx: Click context
+    :type ctx: Namespace
+    :param name: Command name
+    :type name: str
+    """
+    display_commands(ctx)
+    log.abort('Command "{0}" is invalid. Please choose a valid command '
+              'from the list above.'.format(name))
