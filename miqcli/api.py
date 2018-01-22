@@ -230,8 +230,8 @@ class ClientAPI(object):
         get the name of the collection module
         :return: name of the collection
         """
-        stack = inspect.stack()[2]
-        module = inspect.getmodule(stack[0])
+        mod_stack = inspect.stack()[2]
+        module = inspect.getmodule(mod_stack[0])
         return module.__name__.split(".")[-1]
 
     def get_collection(self, collection_name=None):
@@ -344,7 +344,7 @@ class ClientAPI(object):
                     if task.status == "Error":
                         return(1, "Task: {0} failed: {1}".format(
                             task_name, task.message))
-                # wait for the instance to be deleted
+                # wait for the task to be complete
                 sleep(TASK_WAIT)
             else:
                 error = "Task not found, query: {0} returned {1}".format(
