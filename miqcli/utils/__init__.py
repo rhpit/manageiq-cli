@@ -148,3 +148,21 @@ def is_default_config_used():
             status = False
             break
     return status
+
+
+def display_commands(ctx):
+    """Displays the available cli commands.
+
+    :param ctx: Click context
+    :type ctx: Namespace
+    """
+    # create clicks formatter object
+    formatter = ctx.make_formatter()
+
+    # call clicks method to get and format all available commands
+    ctx.command.format_options(ctx, formatter)
+
+    # discard options only leaving commands
+    commands = formatter.getvalue().rstrip('\n').split('Commands:')[1]
+
+    print('Commands:\n {0}'.format(commands))
