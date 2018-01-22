@@ -262,7 +262,7 @@ class ClientAPI(object):
         :param collection: the collection object to be queried
         :param query: tuple of name, operand, value
         :return: a list of collections from the query
-        (Empty if none or invalid)
+                 (Empty if none or invalid)
         """
         try:
             if (len(query) == 3):
