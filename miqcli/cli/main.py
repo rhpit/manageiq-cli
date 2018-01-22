@@ -89,7 +89,7 @@ class ManageIQ(click.MultiCommand):
             # invalid command, display list of available commands/exit
             display_commands(ctx)
             log.abort('Command "{0}" is invalid. Please choose a valid command'
-                      'from the list above.'.format((name)))
+                      ' from the list above.'.format((name)))
         collection_cls = getattr(miq_module, 'Collections')
         return SubCollections(collection_cls)
 
