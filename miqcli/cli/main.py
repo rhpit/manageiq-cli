@@ -28,7 +28,7 @@ from miqcli._compat import ServerProxy
 from miqcli.constants import CFG_DIR, CFG_NAME, COLLECTIONS_PACKAGE, \
     COLLECTIONS_ROOT, DEFAULT_CONFIG, GLOBAL_PARAMS, PACKAGE, PYPI, VERSION
 from miqcli.utils import Config, get_class_methods, log, \
-    is_default_config_used
+    is_default_config_used, _abort_invalid_commands
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -83,7 +83,10 @@ class ManageIQ(click.MultiCommand):
         :return: Click command object.
         :rtype: object
         """
-        miq_module = import_module(COLLECTIONS_PACKAGE + '.' + name)
+        try:
+            miq_module = import_module(COLLECTIONS_PACKAGE + '.' + name)
+        except ImportError:
+            _abort_invalid_commands(ctx, name)
         collection_cls = getattr(miq_module, 'Collections')
         return SubCollections(collection_cls)
 
@@ -228,6 +231,10 @@ class SubCollections(click.MultiCommand):
         :param ctx: Click context.
         :type ctx: Namespace
         """
+        # first lets make sure the sub-command given is valid
+        if ctx.protected_args[0] not in self.list_commands(ctx):
+            _abort_invalid_commands(ctx, ctx.protected_args[0])
+
         if '--help' not in ctx.args:
             # get parent context
             parent_ctx = click.get_current_context().find_root()
