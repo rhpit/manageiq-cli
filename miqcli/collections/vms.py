@@ -15,6 +15,7 @@
 #
 
 from miqcli.decorators import client_api
+from miqcli.api import ClientAPI
 
 
 class Collections(object):
@@ -23,7 +24,49 @@ class Collections(object):
     @client_api
     def query(self):
         """Query."""
-        raise NotImplementedError
+        print self.api
+        print self.all
+        print self.api.basic_query(self.collection, [])
+        print self.api.basic_query(self.collection, ("id", "=", 429))[0].name
+        # test an invalid operator
+        self.api.basic_query(self.collection, ("id", "+", 429))
+        print self.api.get_collection("")
+        print self.api.get_collection("aksdljfdlsk")
+        print self.api.advanced_query(self.collection, [("id", "=", 429), "&", ("name", "=", "str-rhel-client-2")])
+        print "advanced Query complete"
+        print "invalid advanced query 1"
+        print self.api.advanced_query(self.collection, [("id", "=", 429), "&"])
+        print "invlaid advanced query 2"
+        print self.api.advanced_query(self.collection, [("id", "=", 429), ("name", "=", "str-rhel-client-2")])
+        print "invalid advanced query 3"
+        print self.api.advanced_query(self.collection, [("id", "=", 429), "+", ("name", "=", "str-rhel-client-2")])
+        print "invalid advanced query 4"
+        print self.api.advanced_query(self.collection, [()])
+        found_instance = self.api.basic_query(self.api.get_collection("instances"), ('name', '=', 'jslave-CT-HW-parted-example-parted-a7c35'))[0]
+        print found_instance
+        del_result = found_instance.action.terminate()
+        print del_result
+        print del_result._data["task_id"]
+        task_id = del_result._data['task_id']
+        tasklist = self.api.basic_query(self.api.get_collection("tasks"), ("id", "=", task_id))
+        print "got here"
+        print tasklist
+        return_tuple = self.api.check_task(task_id, "attempt to delete an instance")
+        print return_tuple
+        #negative test pass an invalid task id
+        return_tuple = self.api.check_task(435798347589376593, "attempt to delete a non existant instance")
+        print return_tuple
+
+        provision_payload = {'vm_fields': {'vm_name': 'miq-test_machine-vp1', 'cloud_tenant': 3, 'guest_access_key_pair': 6,
+                       'instance_type': 58, 'cloud_network': 5, 'placement_auto': 'false', 'security_groups': 5},
+         'template_fields': {'guid': '310494ee-d37b-11e7-8df4-0242ac110007'},
+         'requester': {'owner_email': 'vipatel@redhat.com'}}
+
+        prov_requests = self.api.get_collection("provision_requests")
+        outcome = prov_requests.action.create(provision_payload)
+        return_tuple = self.api.check_provision_request(outcome[0].id, "provisioning vm: miq-test_machine-vp1")
+        print return_tuple
+
 
     @client_api
     def edit(self):

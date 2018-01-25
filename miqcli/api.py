@@ -16,14 +16,18 @@
 
 import os
 import errno
+import inspect
+from time import sleep
 
 import requests
 from requests.auth import HTTPBasicAuth
 
 from manageiq_client.api import APIException, ManageIQClient
+from manageiq_client.filters import Q
+
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
+from miqcli.constants import AUTHDIR, DEFAULT_CONFIG, TASK_WAIT, PROV_REQ_WAIT
 from miqcli.utils import log
 
 __all__ = ['ClientAPI']
@@ -220,3 +224,191 @@ class ClientAPI(object):
             log.abort('Error creating library pointer - {0}'.format(e.message))
         except Exception as e:
             log.abort('{0}'.format(e.message))
+
+    def get_name(self):
+        """
+        get the name of the collection module
+        :return: name of the collection
+        """
+        mod_stack = inspect.stack()[2]
+        module = inspect.getmodule(mod_stack[0])
+        return module.__name__.split(".")[-1]
+
+    def get_collection(self, collection_name=None):
+        """
+        get the collection object given the name
+        :param collection_name: name of the collection
+        :return: collection object
+        """
+        if collection_name:
+            try:
+                return getattr(self.client.collections, collection_name)
+            except AttributeError:
+                log.warning("Collection {0} does not exist.".format(
+                    collection_name)
+                )
+                return None
+        else:
+            name = self.get_name()
+            return getattr(self.client.collections, name)
+
+    def basic_query(self, collection, query):
+        """
+        basic query of a collection object
+
+        Example of the input
+        vms, ("name","=","cbn_eap64openjdk17c6_pkcrx")
+
+        :param collection: the collection object to be queried
+        :param query: tuple of name, operand, value
+        :return: a list of collections from the query
+                 (Empty if none or invalid)
+        """
+        if not collection:
+            log.abort("Invalid collection passed to be queried")
+        try:
+            if (len(query) == 3):
+                return collection.filter(
+                    Q(query[0], query[1], query[2])
+                ).resources
+            else:
+                log.warning("Invalid query: {0}".format(query))
+                return([])
+        # ValueError caught for invalid operators used
+        except (APIException, ValueError) as e:
+            log.warning("Invalid Query attempted: {0}, Error: {1}".format(
+                query, e)
+            )
+            return ([])
+
+    def advanced_query(self, collection, query_list):
+        """
+        Advance query of a collection object, which just means it is
+        a chain of multiple queries with the & or | operands.
+
+        Example of the input:
+        "vms", [("name","=","cbn_eap64openjdk17c6_pkcrx"),
+        '|', ("id",">",9999934)]
+
+        :param collection:
+        :param query_list: list of (name, operand, value) tuples and operands
+        :return:
+        """
+        if not collection:
+            log.abort("Invalid collection passed to be queried")
+        query = ""
+        if len(query_list) % 2 == 0:
+            # warning message, invalid query was attempted <query_dict>
+            log.warning("Invalid query attempted {0}".format(query_list))
+            return ([])
+        while (query_list):
+            query_tuple = query_list.pop(0)
+            # verify the querying tuple has 3 vals set (name, operator, value)
+            if (len(query_tuple) == 3):
+                query += str("Q('" + str(query_tuple[0]) + "', '" +
+                             str(query_tuple[1])) + "', '" + \
+                    str(query_tuple[2]) + "')"
+            else:
+                log.warning("Invalid query: {0}".format(query_tuple))
+                return([])
+            if query_list:
+                query += " {} ".format(query_list.pop(0))
+            else:
+                try:
+                    resources = self.client.collections.instances.filter(
+                        eval(query)
+                    ).resources
+                except (APIException, ValueError, TypeError) as e:
+                    # most likely user passed an invalid attribute name
+                    error = "Invalid Query attempted: {0}, Error: " \
+                            "{1}".format(query, e)
+                    log.warning(error)
+                    return ([])
+                return resources
+
+    def check_task(self, task_id, task_name):
+        """
+        check_task will keep checking a task until it is complete
+        and return if it was successful or not.
+
+        :param task_id: id of the task to check
+        :param task_name: message of the task being attempted
+        :return: tuple (0/1, message)
+        """
+        done = False
+        while (not done):
+            query = ("id", "=", task_id)
+            tasklist = self.basic_query(self.client.collections.tasks, query)
+            if len(tasklist) == 1:
+                task = tasklist[0]
+                log.debug("Task state: {0}".format(task.state))
+                log.debug("Task status: {0}".format(task.status))
+                if task.state == "Finished":
+                    done = True
+                    if task.status == "Error":
+                        return(1, "Task: {0} failed: {1}".format(
+                            task_name, task.message))
+                # wait for the task to be complete
+                sleep(TASK_WAIT)
+            else:
+                error = "Task not found, query: {0} returned {1}".format(
+                    query, tasklist
+                )
+                log.warning(error)
+                return(1, error)
+
+            if not done:
+                # update the tasks collection
+                self.client.collections.tasks.reload
+            else:
+                return(0, "Task: {} was successful.".format(task_name))
+
+    def check_provision_request(self, prov_request_id, prov_request_name):
+        """
+        check_provision_task will keep checking a provision_requests until it
+        is complete and return if it was successful or not.
+        :param prov_request_id: id of the provision request
+        :param prov_request_name: message of the request being attempted
+        :return: tuple (0/1, message)
+        """
+
+        done = False
+        state = ""
+        while (not done):
+            query = ("id", "=", prov_request_id)
+            pro_req_list = self.basic_query(
+                self.client.collections.provision_requests,
+                query
+            )
+            if len(pro_req_list) == 1:
+                prov_request = pro_req_list[0]
+                if prov_request.request_state != state:
+                    state = prov_request.request_state
+                    log.info(state)
+                else:
+                    # give user feedback of the progress
+                    log.info(".")
+                log.debug("Provision Request State: {0}".format(
+                    prov_request.request_state)
+                )
+                log.debug("Provision Request Status: {0}".format(
+                    prov_request.status)
+                )
+                if prov_request.request_state == "finished":
+                    done = True
+                    if prov_request.status == "Error":
+                        return(1, "Provision Task {0} failed {1}".format(
+                            prov_request_name, prov_request.message))
+                # wait for the request to be updated
+                sleep(PROV_REQ_WAIT)
+            else:
+                error = "Provision Task not found, query: {0} returned " \
+                    "{1}".format(query, pro_req_list)
+                log.warning(error)
+                return(1, error)
+
+            if not done:
+                # update the provision requests collection
+                self.client.collections.provision_requests.reload
+            else:
+                return(0, "Task: {} was successful".format(prov_request_name))

@@ -63,8 +63,30 @@ DEFAULT_CONFIG = {
     'enable_ssl_verify': False
 }
 
+SUPPORTED_PROVIDERS = ["OpenStack"]
+REQUIRED_OS_KEYS = ["email", "tenant", "image", "security_group", "network",
+                    "flavor", "key_pair", "vm_name"]
+OPTIONAL_OS_KEYS = ["floating_ip"]
+
 #: filesystem root for miqcli authentication store
 AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
+
+#: time to wait in secs in between checks of a task
+TASK_WAIT = 2
+
+#: time to wait in secs in between checks of a provision request
+PROV_REQ_WAIT = 5
+
+OPENSTACK_PAYLOAD = {}
+OPENSTACK_PAYLOAD["template_fields"] = {"guid": None}
+OPENSTACK_PAYLOAD["requester"] = {"owner_email": None}
+OPENSTACK_PAYLOAD["vm_fields"] = {"cloud_network": None,
+                                  "placement_auto": "false",
+                                  "cloud_tenant": None,
+                                  "security_groups": None,
+                                  "instance_type": None,
+                                  "guest_access_key_pair": None,
+                                  "vm_name": None}
 
 #: cli entry point click parameters
 GLOBAL_PARAMS = [
