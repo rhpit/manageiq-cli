@@ -19,8 +19,7 @@ import ast
 from miqcli.decorators import client_api
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OS_KEYS, \
     OPTIONAL_OS_KEYS, OPENSTACK_PAYLOAD
-from miqcli.utils import log
-import json
+from miqcli.utils import log, get_input_data
 
 
 class Collections(object):
@@ -46,29 +45,28 @@ class Collections(object):
         if provider not in SUPPORTED_PROVIDERS:
             log.abort("Unsupported Provider, please select one from the " \
                       "supported list: {0}".format(SUPPORTED_PROVIDERS))
+
         if provider == "OpenStack":
             log.info("Attempt to create a provision request")
-            input_data = ""
-            # get our data
-            if payload:
-                input_data = ast.literal_eval(payload)
-            elif payload_file:
-                with open(payload_file) as f:
-                    input_data = json.load(f)
-            else:
-                log.abort("Please set the payload or payload_file parameter")
+
+            # get the data from user input
+            input_data = get_input_data(payload, payload_file)
 
             # verify all the required keys are set
+            missing_data = []
             for key in REQUIRED_OS_KEYS:
                  if key not in input_data:
-                     log.abort("{0} is a required key, please set it in the payload".format(key))
+                     missing_data.append(key)
+            if missing_data:
+                log.abort("Required key(s) missing: {0}, please set it in the payload".format(missing_data))
 
+            # removing code to check for keys not expected by OpenStack
             # verify there are no invalid keys
-            set_keys = list(input_data.keys())
-            all_keys = OPTIONAL_OS_KEYS + REQUIRED_OS_KEYS
-            invalid_keys = list(set(set_keys) - set(all_keys))
-            if invalid_keys:
-                log.abort("{0} is not a valid key for the OpenStack provider".format(invalid_keys))
+            # set_keys = list(input_data.keys())
+            # all_keys = OPTIONAL_OS_KEYS + REQUIRED_OS_KEYS
+            # invalid_keys = list(set(set_keys) - set(all_keys))
+            # if invalid_keys:
+            #     log.abort("{0} is not a valid key for the OpenStack provider".format(invalid_keys))
 
             # Verified data is valid, update payload w/id lookups
 
@@ -76,53 +74,75 @@ class Collections(object):
             OPENSTACK_PAYLOAD["requester"]["owner_email"] = input_data["email"]
             OPENSTACK_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
+            # get the OpenStack provider types to add to all queries
+            OS_type = self.api.query_getattr(self.api.get_collection("providers"),
+                                             ("name", "=", "Openstack"),
+                                             "type")
+            OS_network_type = self.api.query_getattr(self.api.get_collection("providers"),
+                                             ("name", "=", "Openstack Network Manager"),
+                                             "type")
+
             # lookup flavor
-            flavor_list = self.api.basic_query(self.api.get_collection("flavors"),
-                                               ("name", "=", input_data["flavor"]))
-            if len(flavor_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["instance_type"] = flavor_list[0].id
+            flavor_id_list = self.api.adv_query_getattr(self.api.get_collection("flavors"),
+                                                 [("name", "=", input_data["flavor"]), "&",
+                                                  ("type", "=", OS_type + "::Flavor")],
+                                                    "id")
+            if len(flavor_id_list) == 1:
+                OPENSTACK_PAYLOAD["vm_fields"]["instance_type"] = flavor_id_list[0]
             else:
                 log.abort("Querying for passed flavor: {0} failed".format(input_data["flavor"]))
 
             # lookup image
-            template_list = self.api.basic_query(self.api.get_collection("templates"),
-                                                 ("name", "=", input_data["image"]))
-            # getting multiple matches for some reason???
-            if len(template_list) > 0:
-                OPENSTACK_PAYLOAD["template_fields"]["guid"] = template_list[0].guid
+            template_id_list = self.api.adv_query_getattr(self.api.get_collection("templates"),
+                                                 [("name", "=", input_data["image"]), "&",
+                                                  ("type", "=", OS_type + "::Template")],
+                                                    "guid")
+            # getting multiple matches for some reason???, just taking first for now
+            # TODO investigate and fix
+            if len(template_id_list) > 0:
+                OPENSTACK_PAYLOAD["template_fields"]["guid"] = template_id_list[0]
             else:
-                log.abort("Querying for passed image: {0} failed: {1}".format(
-                    input_data["image"], template_list))
+                log.abort("Querying for passed image: {0} failed".format(input_data["image"]))
 
-            # lookup security groups
-            secgroup_list = self.api.basic_query(self.api.get_collection("security_groups"),
-                                                 ("name", "=", input_data["security_group"]))
-            if len(secgroup_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["security_groups"] = secgroup_list[0].id
+
+            # lookup  security group
+            secgroup_id_list = self.api.adv_query_getattr(self.api.get_collection("security_groups"),
+                                                 [("name", "=", input_data["security_group"]), "&",
+                                                  ("type", "=", OS_network_type + "::SecurityGroup")],
+                                                    "id")
+            if len(secgroup_id_list) == 1:
+                OPENSTACK_PAYLOAD["vm_fields"]["security_groups"] = secgroup_id_list[0]
             else:
                 log.abort("Querying for passed security group: {0} failed".format(input_data["security_group"]))
 
-            # lookup keypairs
-            keypair_list = self.api.basic_query(self.api.get_collection("authentications"),
-                                                ("name", "=", input_data["key_pair"]))
-            if len(keypair_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["guest_access_key_pair"] = keypair_list[0].id
+            # lookup keypair
+            keypair_id_list = self.api.adv_query_getattr(self.api.get_collection("authentications"),
+                                                 [("name", "=", input_data["key_pair"]), "&",
+                                                  ("type", "=", OS_type + "::AuthKeyPair")],
+                                                    "id")
+            if len(keypair_id_list) == 1:
+                OPENSTACK_PAYLOAD["vm_fields"]["guest_access_key_pair"] = keypair_id_list[0]
             else:
                 log.abort("Querying for passed keypair: {0} failed".format(input_data["key_pair"]))
 
             # lookup cloud network
-            cloudnetwork_list = self.api.basic_query(self.api.get_collection("cloud_networks"),
-                                                     ("name", "=", input_data["network"]))
-            if len(cloudnetwork_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["cloud_network"] = cloudnetwork_list[0].id
+            cloudnetwork_id_list = self.api.adv_query_getattr(self.api.get_collection("cloud_networks"),
+                                                 [("name", "=", input_data["network"]), "&",
+                                                  ("type", "=", OS_network_type + "::CloudNetwork::Private")],
+                                                    "id")
+            if len(cloudnetwork_id_list) == 1:
+                OPENSTACK_PAYLOAD["vm_fields"]["cloud_network"] = cloudnetwork_id_list[0]
             else:
                 log.abort("Querying for passed network: {0} failed".format(input_data["network"]))
 
             # lookup cloud tenant
-            cloudtenant_list = self.api.basic_query(self.api.get_collection("cloud_tenants"),
-                                                    ("name", "=", input_data["tenant"]))
-            if len(cloudtenant_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["cloud_tenant"] = cloudtenant_list[0].id
+            cloudtenant_id_list = self.api.adv_query_getattr(self.api.get_collection("cloud_tenants"),
+                                                 [("name", "=", input_data["tenant"]), "&",
+                                                  ("type", "=", OS_type + "::CloudTenant")],
+                                                    "id")
+
+            if len(cloudtenant_id_list) == 1:
+                OPENSTACK_PAYLOAD["vm_fields"]["cloud_tenant"] = cloudtenant_id_list[0]
             else:
                 log.abort("Querying for passed network: {0} failed".format(input_data["tenant"]))
 
@@ -150,4 +170,11 @@ class Collections(object):
     @client_api
     def query(self):
         """Query."""
+        raise NotImplementedError
+
+    @click.option('--id', type=str,
+                  help='id of a specific provisioning request')
+    @client_api
+    def status(self):
+        """Get the status of provisioning requests."""
         raise NotImplementedError

@@ -17,6 +17,7 @@
 import os
 import yaml
 import ast
+import json
 from types import FunctionType
 
 import click
@@ -180,3 +181,27 @@ def _abort_invalid_commands(ctx, name):
     display_commands(ctx)
     log.abort('Command "{0}" is invalid. Please choose a valid command '
               'from the list above.'.format(name))
+
+def get_input_data(payload, payload_file):
+    """
+    helper function to get payload data from a string or json file.
+    :param payload: str representation of json payload data
+    :param payload_file: json file
+    :return:
+    """
+    if payload:
+        try:
+            return ast.literal_eval(payload)
+        except SyntaxError as e:
+            log.abort(e)
+    elif payload_file:
+        if os.path.isfile(payload_file):
+            with open(payload_file) as f:
+                try:
+                    return json.load(f)
+                except ValueError as e:
+                    log.abort(e)
+        else:
+            log.abort("File: {0} not found.".format(payload_file))
+    else:
+        log.abort("Please set the payload or payload_file")

@@ -252,6 +252,58 @@ class ClientAPI(object):
             name = self.get_name()
             return getattr(self.client.collections, name)
 
+    def query_getattr(self, collection, query, attr):
+        """
+        perform a basic query, and return the object's attribute that
+        is passed in.
+        :param collection:
+        :param query:
+        :param attr:
+        :return: returns an attribute if only a single item or a list of
+                 attributes if there are multiple returns from the query.
+        """
+        collect_list = self.basic_query(collection, query)
+        if len(collect_list) ==  0:
+            return None
+        elif len(collect_list) == 1:
+            try:
+                return getattr(collect_list[0], attr)
+            except AttributeError as e:
+                log.warning(e)
+                return None
+        else:
+            attr_list = []
+            for collection in collect_list:
+                try:
+                    attr_list.append(getattr(collection, attr))
+                except AttributeError as e:
+                    log.warning(e)
+                    return None
+            return attr_list
+
+    def adv_query_getattr(self, collection, query_list, attr):
+        """
+        perform a basic query, and return the object's attribute that
+        is passed in.
+        :param collection:
+        :param query_list:
+        :param attr:
+        :return: returns an attribute if only a single item or a list of
+                 attributes if there are multiple returns from the query.
+        """
+        attr_list = []
+        collect_list = self.advanced_query(collection, query_list)
+        if len(collect_list) ==  0:
+            return collect_list
+        else:
+            for collection in collect_list:
+                try:
+                    attr_list.append(getattr(collection, attr))
+                except AttributeError as e:
+                    log.warning(e)
+                    return []
+            return attr_list
+
     def basic_query(self, collection, query):
         """
         basic query of a collection object
@@ -315,7 +367,7 @@ class ClientAPI(object):
                 query += " {} ".format(query_list.pop(0))
             else:
                 try:
-                    resources = self.client.collections.instances.filter(
+                    resources = collection.filter(
                         eval(query)
                     ).resources
                 except (APIException, ValueError, TypeError) as e:
