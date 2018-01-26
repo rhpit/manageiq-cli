@@ -66,6 +66,13 @@ DEFAULT_CONFIG = {
 #: filesystem root for miqcli authentication store
 AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
 
+#: time to wait in secs in between checks of a task
+TASK_WAIT = 2
+
+#: time to wait in secs in between checks of a provision request
+PROV_REQ_WAIT = 5
+
+
 #: cli entry point click parameters
 GLOBAL_PARAMS = [
     click.Option(
