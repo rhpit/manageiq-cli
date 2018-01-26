@@ -15,7 +15,12 @@
 #
 
 import os
+import urllib3
 import errno
+
+
+from click import Context
+from click.globals import push_context
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -24,9 +29,11 @@ from manageiq_client.api import APIException, ManageIQClient
 from requests.exceptions import ConnectionError
 
 from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
-from miqcli.utils import log
+from miqcli.utils import log, get_collection_class
 
-__all__ = ['ClientAPI']
+__all__ = ['ClientAPI', 'Client']
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class ClientAPI(object):
@@ -220,3 +227,80 @@ class ClientAPI(object):
             log.abort('Error creating library pointer - {0}'.format(e.message))
         except Exception as e:
             log.abort('{0}'.format(e.message))
+
+
+class Client(object):
+    """ManageIQ client class.
+
+    This class is an entry point to accessing the client directly within
+    Python modules. Should be used outside the scope of the client source
+    code.
+
+    HOW-TO:
+    Simply create an instance of the class with your server settings. Then all
+    you need to do is set the collection to use and call one of its actions.
+    Just like you would via the command line.
+
+    .. code-block: python
+
+        from miqcli import Client
+
+        # create a client object
+        client = Client({'url': '', 'username': '', 'password': '', 'etc': ''})
+
+        # set the collection to use
+        client.collection = 'providers'
+
+        # call collection action w/params
+        client.collection.create(<params>)
+
+    This mirrors the following via command line.
+
+    .. code-block: bash
+
+        miqcli providers create <params>
+    """
+
+    _collection = object
+
+    def __init__(self, conf, verbose=False):
+        """Constructor.
+
+        :param conf: server configuration
+        :type conf: dict
+        :param verbose: verbose mode
+        :type verbose: bool
+        """
+
+        # create client api instance
+        api = ClientAPI(conf)
+        api.connect()
+
+        # create click context object (req. for each collection class)
+        from miqcli.cli.main import ManageIQ
+        self._ctx = Context(ManageIQ())
+
+        # inject req. data into context
+        self._ctx.params['verbose'] = verbose
+        setattr(self._ctx, 'client_api', api)
+
+        # finally, push context object up the stack for collections to access
+        push_context(self._ctx)
+
+    @property
+    def collection(self):
+        """Collection property.
+
+         :return: collection
+         :rtype: class
+         """
+        return self._collection
+
+    @collection.setter
+    def collection(self, name):
+        """Set collection property with the instantiated collection class.
+
+        :param name: collection name
+        :type name: str
+        """
+        self._collection = get_collection_class(self._ctx, name)()

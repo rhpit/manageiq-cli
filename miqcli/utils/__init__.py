@@ -14,19 +14,20 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os
-import yaml
 import ast
-from types import FunctionType
+from importlib import import_module
 
 import click
+import os
+import yaml
+from types import FunctionType
 
-from miqcli.constants import CFG_FILE_EXT
+from miqcli.constants import CFG_FILE_EXT, COLLECTIONS_PACKAGE
 from miqcli.utils import log
 
 __all__ = ['Config', 'get_class_methods', 'get_client_api_pointer',
            'is_default_config_used', 'display_commands',
-           '_abort_invalid_commands']
+           '_abort_invalid_commands', 'get_collection_class']
 
 
 class Config(dict):
@@ -149,6 +150,23 @@ def is_default_config_used():
             status = False
             break
     return status
+
+
+def get_collection_class(ctx, name):
+    """Return the collection's class from a module lookup.
+
+    :param ctx: Click context
+    :type ctx: Namespace
+    :param name: Collection name
+    :type name: str
+    :return: Collection class reference
+    :rtype: class
+    """
+    try:
+        return getattr(import_module(COLLECTIONS_PACKAGE + '.' + name),
+                       'Collections')
+    except ImportError:
+        _abort_invalid_commands(ctx, name)
 
 
 def display_commands(ctx):
