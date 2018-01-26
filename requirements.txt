@@ -1,5 +1,4 @@
 click==6.7
-pbr==3.1.1
--e git+https://github.com/ManageIQ/manageiq-api-client-python.git@fd3893d51a0a25daffb9db7723dc15feb2877c42#egg=manageiq_client
+manageiq-client==0.4.0
 PyYAML==3.12
 requests==2.18.4
