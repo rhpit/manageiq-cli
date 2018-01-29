@@ -86,9 +86,40 @@ begin
   address = conn.allocate_address(pool_name).body
   log(:info, "Allocated #{address['floating_ip'].inspect}")
 
-  ip_list[address['floating_ip']['ip']] = address['floating_ip']['id']
-
   ext_management_system.refresh
+
+  # Set timer 10 min. (600 seconds)
+  timer = 600
+  new_ip = nil
+
+  while (timer > 0)
+      # Get Floating IP data
+      new_ips = $evm.vmdb(:floating_ip).where(["cloud_network_id = ? and
+                                         cloud_tenant_id = ? and address = ? and
+                                         status = ? and vm_id is NULL",
+                                         $evm.object['cloud_network_id'],
+                                         $evm.object['cloud_tenant_id'],
+                                         address['floating_ip']['ip'],
+                                         "DOWN"])
+     
+      # Have data done
+      if new_ips and new_ips.length > 0
+          log(:info, "Time: #{600 - timer} seconds - Number of IPs: #{new_ips.length}")
+          log(:info, "Floating IPs: #{new_ips.inspect}")
+          new_ip = new_ips[0]
+          break
+      end
+      
+      # Wait 5 seconds, count down and continue
+      sleep(5)
+      timer = timer - 5
+
+      # Raise error if taking to long to get data
+      raise 'ERROR: Timeout getting created floating IP information' if timer <=0
+  end
+
+  log(:info, "Floating IP: #{address['floating_ip']['ip']} ID: #{new_ip.id}")
+  ip_list[address['floating_ip']['ip']] = new_ip.id 
 
   log(:info, "ip #{ip_list}")
   
