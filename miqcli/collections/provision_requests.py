@@ -16,9 +16,11 @@
 
 import click
 import ast
+from collections import OrderedDict
+
 from miqcli.decorators import client_api
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OS_KEYS, \
-    OPTIONAL_OS_KEYS, OPENSTACK_PAYLOAD
+    OPENSTACK_PAYLOAD, FLOATINGIP_PAYLOAD, OS_TYPE, OS_NETWORK_TYPE
 from miqcli.utils import log, get_input_data
 
 
@@ -75,12 +77,8 @@ class Collections(object):
             OPENSTACK_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
             # get the OpenStack provider types to add to all queries
-            OS_type = self.api.query_getattr(self.api.get_collection("providers"),
-                                             ("name", "=", "Openstack"),
-                                             "type")
-            OS_network_type = self.api.query_getattr(self.api.get_collection("providers"),
-                                             ("name", "=", "Openstack Network Manager"),
-                                             "type")
+            OS_type = OS_TYPE
+            OS_network_type = OS_NETWORK_TYPE
 
             # lookup flavor
             flavor_id_list = self.api.adv_query_getattr(self.api.get_collection("flavors"),
@@ -146,6 +144,10 @@ class Collections(object):
             else:
                 log.abort("Querying for passed network: {0} failed".format(input_data["tenant"]))
 
+            FLOATINGIP_PAYLOAD["parameters"] = {"cloud_network_id": None,
+                                                "cloud_tenant_id": None}
+
+
             # TODO: Add optional params to the payload (floating ip)
 
             log.debug("Payload for the provisioning request: {0}".format(OPENSTACK_PAYLOAD))
@@ -175,6 +177,41 @@ class Collections(object):
     @click.option('--id', type=str,
                   help='id of a specific provisioning request')
     @client_api
-    def status(self):
+    def status(self, id):
         """Get the status of provisioning requests."""
-        raise NotImplementedError
+
+        status = OrderedDict()
+        if id:
+            provision_req_list = self.api.basic_query(self.collection, ("id", "=", id))
+            if len(provision_req_list) ==1:
+                req = provision_req_list[0]
+                status["state"] = req.request_state
+                status["status"] = req.status
+                status["message"] = req.message
+                click.echo("STATUS")
+                for key in status:
+                    click.echo("{0}: {1}".format(key, status[key]))
+                return status
+            else:
+                log.abort("Unable to find a provision request with id: {0}".format(id))
+                return status
+        else:
+            click.echo("STATUS of all active provisioning requests:")
+            # active_requests = []
+            # for prov_req in self.collection.all:
+            #     if prov_req.state in ["pending", "queued", "active", "provisioned"]:
+            #         active_requests.append(prov_req)
+            # print prov_req
+            provision_req_list = self.api.basic_query(self.collection, ("request_state", "!=", "finished"))
+
+            # provision_req_list = self.api.advanced_query(self.collection,
+            #                                              [("request_state", "=", "pending"), "|",
+            #                                               ("request_state", "=", "queued"), "|",
+            #                                               ("state", "=", "active"), "|",
+            #                                               ("state", "=", "provisioned")])
+            if provision_req_list:
+                for prov_req in provision_req_list:
+                    click.echo("ID: {0}\tInstance: {1}\tSTATE: {2}\t STATUS: {3}".format(prov_req.id, prov_req.options["vm_name"], prov_req.request_state, prov_req.status))
+            else:
+                click.echo("No active provisioning requests")
+            return(provision_req_list)
