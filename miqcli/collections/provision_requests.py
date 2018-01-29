@@ -38,14 +38,14 @@ class Collections(object):
     @click.option('--payload', type=str,
                   help='payload data for a provisioning request')
     @click.option('--payload_file', type=str,
-                  help='file name of a json file of the data to' \
+                  help='file name of a json file of the data to'
                        ' provision a resource')
     @client_api
     def create(self, provider, payload, payload_file):
         """Create."""
         # verify a valid provider
         if provider not in SUPPORTED_PROVIDERS:
-            log.abort("Unsupported Provider, please select one from the " \
+            log.abort("Unsupported Provider, please select one from the "
                       "supported list: {0}".format(SUPPORTED_PROVIDERS))
 
         if provider == "OpenStack":
@@ -57,22 +57,14 @@ class Collections(object):
             # verify all the required keys are set
             missing_data = []
             for key in REQUIRED_OS_KEYS:
-                 if key not in input_data:
-                     missing_data.append(key)
+                if key not in input_data or input_data[key] is None:
+                    missing_data.append(key)
             if missing_data:
-                log.abort("Required key(s) missing: {0}, please set it in the payload".format(missing_data))
-
-            # removing code to check for keys not expected by OpenStack
-            # verify there are no invalid keys
-            # set_keys = list(input_data.keys())
-            # all_keys = OPTIONAL_OS_KEYS + REQUIRED_OS_KEYS
-            # invalid_keys = list(set(set_keys) - set(all_keys))
-            # if invalid_keys:
-            #     log.abort("{0} is not a valid key for the OpenStack provider".format(invalid_keys))
+                log.abort("Required key(s) missing: {0}, please set it in "
+                          "the payload".format(missing_data))
 
             # Verified data is valid, update payload w/id lookups
-
-            #set the email_address
+            # set the email_address and vm name
             OPENSTACK_PAYLOAD["requester"]["owner_email"] = input_data["email"]
             OPENSTACK_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
@@ -81,86 +73,136 @@ class Collections(object):
             OS_network_type = OS_NETWORK_TYPE
 
             # lookup flavor
-            flavor_id_list = self.api.adv_query_getattr(self.api.get_collection("flavors"),
-                                                 [("name", "=", input_data["flavor"]), "&",
-                                                  ("type", "=", OS_type + "::Flavor")],
-                                                    "id")
+            flavor_id_list = self.api.adv_query_getattr(
+                self.api.get_collection("flavors"),
+                [("name", "=", input_data["flavor"]),
+                 "&", ("type", "=", OS_type + "::Flavor")],
+                "id")
             if len(flavor_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["instance_type"] = flavor_id_list[0]
+                OPENSTACK_PAYLOAD["vm_fields"]["instance_type"] = \
+                    flavor_id_list[0]
             else:
-                log.abort("Querying for passed flavor: {0} failed".format(input_data["flavor"]))
+                log.abort("Querying for passed flavor: {0} failed".format(
+                    input_data["flavor"]))
 
             # lookup image
-            template_id_list = self.api.adv_query_getattr(self.api.get_collection("templates"),
-                                                 [("name", "=", input_data["image"]), "&",
-                                                  ("type", "=", OS_type + "::Template")],
-                                                    "guid")
-            # getting multiple matches for some reason???, just taking first for now
+            template_id_list = self.api.adv_query_getattr(
+                self.api.get_collection("templates"),
+                [("name", "=", input_data["image"]), "&",
+                 ("type", "=", OS_type + "::Template")],
+                "guid")
+            # getting multiple matches for some reason???, just taking first
             # TODO investigate and fix
             if len(template_id_list) > 0:
-                OPENSTACK_PAYLOAD["template_fields"]["guid"] = template_id_list[0]
+                OPENSTACK_PAYLOAD["template_fields"]["guid"] = \
+                    template_id_list[0]
             else:
-                log.abort("Querying for passed image: {0} failed".format(input_data["image"]))
-
+                log.abort("Querying for passed image: {0} failed".format(
+                    input_data["image"]))
 
             # lookup  security group
-            secgroup_id_list = self.api.adv_query_getattr(self.api.get_collection("security_groups"),
-                                                 [("name", "=", input_data["security_group"]), "&",
-                                                  ("type", "=", OS_network_type + "::SecurityGroup")],
-                                                    "id")
+            secgroup_id_list = self.api.adv_query_getattr(
+                self.api.get_collection("security_groups"),
+                [("name", "=", input_data["security_group"]), "&",
+                 ("type", "=", OS_network_type + "::SecurityGroup")],
+                "id")
             if len(secgroup_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["security_groups"] = secgroup_id_list[0]
+                OPENSTACK_PAYLOAD["vm_fields"]["security_groups"] = \
+                    secgroup_id_list[0]
             else:
-                log.abort("Querying for passed security group: {0} failed".format(input_data["security_group"]))
+                log.abort("Querying for passed security group: {0} "
+                          "failed".format(input_data["security_group"]))
 
             # lookup keypair
-            keypair_id_list = self.api.adv_query_getattr(self.api.get_collection("authentications"),
-                                                 [("name", "=", input_data["key_pair"]), "&",
-                                                  ("type", "=", OS_type + "::AuthKeyPair")],
-                                                    "id")
+            keypair_id_list = self.api.adv_query_getattr(
+                self.api.get_collection("authentications"),
+                [("name", "=", input_data["key_pair"]), "&",
+                 ("type", "=", OS_type + "::AuthKeyPair")],
+                "id")
             if len(keypair_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["guest_access_key_pair"] = keypair_id_list[0]
+                OPENSTACK_PAYLOAD["vm_fields"]["guest_access_key_pair"] = \
+                    keypair_id_list[0]
             else:
-                log.abort("Querying for passed keypair: {0} failed".format(input_data["key_pair"]))
+                log.abort("Querying for passed keypair: {0} "
+                          "failed".format(input_data["key_pair"]))
 
             # lookup cloud network
-            cloudnetwork_id_list = self.api.adv_query_getattr(self.api.get_collection("cloud_networks"),
-                                                 [("name", "=", input_data["network"]), "&",
-                                                  ("type", "=", OS_network_type + "::CloudNetwork::Private")],
-                                                    "id")
+            cloudnetwork_id_list = self.api.adv_query_getattr(
+                self.api.get_collection("cloud_networks"),
+                [("name", "=", input_data["network"]), "&",
+                 ("type", "=", OS_network_type + "::CloudNetwork::Private")],
+                "id")
             if len(cloudnetwork_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["cloud_network"] = cloudnetwork_id_list[0]
+                OPENSTACK_PAYLOAD["vm_fields"]["cloud_network"] = \
+                    cloudnetwork_id_list[0]
             else:
-                log.abort("Querying for passed network: {0} failed".format(input_data["network"]))
+                log.abort("Querying for passed network: {0} "
+                          "failed".format(input_data["network"]))
 
             # lookup cloud tenant
-            cloudtenant_id_list = self.api.adv_query_getattr(self.api.get_collection("cloud_tenants"),
-                                                 [("name", "=", input_data["tenant"]), "&",
-                                                  ("type", "=", OS_type + "::CloudTenant")],
-                                                    "id")
+            cloudtenant_id_list = self.api.adv_query_getattr(
+                self.api.get_collection("cloud_tenants"),
+                [("name", "=", input_data["tenant"]), "&",
+                 ("type", "=", OS_type + "::CloudTenant")],
+                "id")
 
             if len(cloudtenant_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["cloud_tenant"] = cloudtenant_id_list[0]
+                OPENSTACK_PAYLOAD["vm_fields"]["cloud_tenant"] = \
+                    cloudtenant_id_list[0]
             else:
-                log.abort("Querying for passed network: {0} failed".format(input_data["tenant"]))
+                log.abort("Querying for passed network: {0} failed".format(
+                    input_data["tenant"]))
 
-            FLOATINGIP_PAYLOAD["parameters"] = {"cloud_network_id": None,
-                                                "cloud_tenant_id": None}
+            # set the floating ip if set by the user
+            if "fip_pool" in input_data and input_data["fip_pool"]:
+                pub_cloudnetwork_id_list = self.api.adv_query_getattr(
+                    self.api.get_collection("cloud_networks"),
+                    [("name", "=", input_data["fip_pool"]), "&",
+                     ("type", "=", OS_network_type + "::CloudNetwork::Public")
+                     ], "id")
+                FLOATINGIP_PAYLOAD["parameters"]["cloud_network_id"] = \
+                    pub_cloudnetwork_id_list[0]
+                FLOATINGIP_PAYLOAD["parameters"]["cloud_tenant_id"] = \
+                    cloudtenant_id_list[0]
 
+                automation_req_collection = self.api.get_collection(
+                    "automation_requests")
+                fip_req = automation_req_collection.action.create(
+                    FLOATINGIP_PAYLOAD)
+                request_id = fip_req[0].id
+                request_name = "Attempting to get a floating ip"
 
-            # TODO: Add optional params to the payload (floating ip)
+                # not using the check_request data, just using the call to wait
+                # for the task to be complete
+                self.api.check_request(request_id, request_name,
+                                       type="automation")
 
-            log.debug("Payload for the provisioning request: {0}".format(OPENSTACK_PAYLOAD))
+                options = self.api.query_getattr(automation_req_collection,
+                                                 ("id", "=", request_id),
+                                                 "options")
+
+                if "return" in options:
+                    return_data = options["return"]
+                else:
+                    # unexpected error, maybe Automate Datastore not imported?
+                    log.abort("Unexpected Error when getting floating ip")
+                return_dict = ast.literal_eval(return_data)
+                if return_dict["status"] == "success":
+                    fip, fip_id = return_dict["return"].items()[0]
+                    log.debug("got floating ip: {0}: {1}".format(fip, fip_id))
+                    OPENSTACK_PAYLOAD["vm_fields"]["floating_ip_address"] = \
+                        fip_id
+                else:
+                    log.abort("error occurred: {0}".format(
+                        return_dict["return"]))
+
+            log.debug("Payload for the provisioning request: {0}".format(
+                OPENSTACK_PAYLOAD))
 
             outcome = self.action(OPENSTACK_PAYLOAD)
             provreq_id = outcome[0].id
             log.info("Provisioning request created: {0}".format(provreq_id))
-            return_tuple = self.api.check_provision_request(provreq_id,
-                                                            "provisioning vm: {}".format(input_data["vm_name"]))
-            if return_tuple[0] == 0:
-                log.info(return_tuple[1])
-            else:
-                log.abort(return_tuple[1])
+            return(provreq_id)
         else:
             log.abort("Unsupported provider: {0}".format(provider))
 
@@ -182,36 +224,35 @@ class Collections(object):
 
         status = OrderedDict()
         if id:
-            provision_req_list = self.api.basic_query(self.collection, ("id", "=", id))
-            if len(provision_req_list) ==1:
+            provision_req_list = self.api.basic_query(self.collection,
+                                                      ("id", "=", id))
+            if len(provision_req_list) == 1:
                 req = provision_req_list[0]
                 status["state"] = req.request_state
                 status["status"] = req.status
                 status["message"] = req.message
-                click.echo("STATUS")
+                click.echo("STATUS of provision request {0} ({1})".format(
+                    id, req.options["vm_name"]))
                 for key in status:
                     click.echo("{0}: {1}".format(key, status[key]))
                 return status
             else:
-                log.abort("Unable to find a provision request with id: {0}".format(id))
+                log.abort("Unable to find a provision request with id: "
+                          "{0}".format(id))
                 return status
         else:
             click.echo("STATUS of all active provisioning requests:")
-            # active_requests = []
-            # for prov_req in self.collection.all:
-            #     if prov_req.state in ["pending", "queued", "active", "provisioned"]:
-            #         active_requests.append(prov_req)
-            # print prov_req
-            provision_req_list = self.api.basic_query(self.collection, ("request_state", "!=", "finished"))
+            provision_req_list = self.api.basic_query(
+                self.collection,
+                ("request_state", "!=", "finished"))
 
-            # provision_req_list = self.api.advanced_query(self.collection,
-            #                                              [("request_state", "=", "pending"), "|",
-            #                                               ("request_state", "=", "queued"), "|",
-            #                                               ("state", "=", "active"), "|",
-            #                                               ("state", "=", "provisioned")])
             if provision_req_list:
                 for prov_req in provision_req_list:
-                    click.echo("ID: {0}\tInstance: {1}\tSTATE: {2}\t STATUS: {3}".format(prov_req.id, prov_req.options["vm_name"], prov_req.request_state, prov_req.status))
+                    click.echo("ID: {0}\tInstance: {1}\tSTATE: {2}\t STATUS:"
+                               "{3}".format(prov_req.id,
+                                            prov_req.options["vm_name"],
+                                            prov_req.request_state,
+                                            prov_req.status))
             else:
                 click.echo("No active provisioning requests")
             return(provision_req_list)

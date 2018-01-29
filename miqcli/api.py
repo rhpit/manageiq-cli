@@ -27,7 +27,7 @@ from manageiq_client.filters import Q
 
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import AUTHDIR, DEFAULT_CONFIG, TASK_WAIT, PROV_REQ_WAIT
+from miqcli.constants import AUTHDIR, DEFAULT_CONFIG, TASK_WAIT, REQ_WAIT
 from miqcli.utils import log
 
 __all__ = ['ClientAPI']
@@ -256,14 +256,14 @@ class ClientAPI(object):
         """
         perform a basic query, and return the object's attribute that
         is passed in.
-        :param collection:
-        :param query:
-        :param attr:
-        :return: returns an attribute if only a single item or a list of
-                 attributes if there are multiple returns from the query.
+
+        :param collection: the specific collection object
+        :param query: query (a single tuple)
+        :param attr: the attribute to get
+        :return: returns a list of attributes, [] if query returns nothing.
         """
         collect_list = self.basic_query(collection, query)
-        if len(collect_list) ==  0:
+        if len(collect_list) == 0:
             return None
         elif len(collect_list) == 1:
             try:
@@ -283,17 +283,16 @@ class ClientAPI(object):
 
     def adv_query_getattr(self, collection, query_list, attr):
         """
-        perform a basic query, and return the object's attribute that
-        is passed in.
-        :param collection:
-        :param query_list:
-        :param attr:
-        :return: returns an attribute if only a single item or a list of
-                 attributes if there are multiple returns from the query.
+        perform an advanced query, and return a list of each obj's attribute.
+
+        :param collection: the specific collection object
+        :param query_list: a list of tuple queries joined, and operators (&,|)
+        :param attr: the attribute to get
+        :return: returns a list of attributes, [] if query returns nothing.
         """
         attr_list = []
         collect_list = self.advanced_query(collection, query_list)
-        if len(collect_list) ==  0:
+        if len(collect_list) == 0:
             return collect_list
         else:
             for collection in collect_list:
@@ -311,7 +310,7 @@ class ClientAPI(object):
         Example of the input
         vms, ("name","=","cbn_eap64openjdk17c6_pkcrx")
 
-        :param collection: the collection object to be queried
+        :param collection: the specific collection object
         :param query: tuple of name, operand, value
         :return: a list of collections from the query
                  (Empty if none or invalid)
@@ -342,9 +341,9 @@ class ClientAPI(object):
         "vms", [("name","=","cbn_eap64openjdk17c6_pkcrx"),
         '|', ("id",">",9999934)]
 
-        :param collection:
+        :param collection: the specific collection object
         :param query_list: list of (name, operand, value) tuples and operands
-        :return:
+        :return: a list of resources
         """
         if not collection:
             log.abort("Invalid collection passed to be queried")
@@ -415,52 +414,67 @@ class ClientAPI(object):
             else:
                 return(0, "Task: {} was successful.".format(task_name))
 
-    def check_provision_request(self, prov_request_id, prov_request_name):
+    def check_request(self, request_id, request_name, type="provision"):
         """
-        check_provision_task will keep checking a provision_requests until it
-        is complete and return if it was successful or not.
-        :param prov_request_id: id of the provision request
-        :param prov_request_name: message of the request being attempted
+        check_request will keep checking a provision or automation request
+        until it is complete and return if it was successful or not.
+        :param request_id: id of the provision request
+        :param request_name: message of the request being attempted
+        :param type: optional param can be provision or automation
         :return: tuple (0/1, message)
         """
 
         done = False
         state = ""
         while (not done):
-            query = ("id", "=", prov_request_id)
-            pro_req_list = self.basic_query(
-                self.client.collections.provision_requests,
-                query
-            )
-            if len(pro_req_list) == 1:
-                prov_request = pro_req_list[0]
-                if prov_request.request_state != state:
-                    state = prov_request.request_state
+            query = ("id", "=", request_id)
+            if type == "provision":
+                req_list = self.basic_query(
+                    self.client.collections.provision_requests,
+                    query
+                )
+            elif type == "automation":
+                req_list = self.basic_query(
+                    self.client.collections.automation_requests,
+                    query
+                )
+            else:
+                error = "Unsupported type of request attempated: "\
+                        "{0}".format(type)
+                log.warning(error)
+                return(1, error)
+            if len(req_list) == 1:
+                request = req_list[0]
+                if request.request_state != state:
+                    state = request.request_state
                     log.info(state)
                 else:
                     # give user feedback of the progress
                     log.info(".")
-                log.debug("Provision Request State: {0}".format(
-                    prov_request.request_state)
+                log.debug("Request State: {0}".format(
+                    request.request_state)
                 )
-                log.debug("Provision Request Status: {0}".format(
-                    prov_request.status)
+                log.debug("Request Status: {0}".format(
+                    request.status)
                 )
-                if prov_request.request_state == "finished":
+                if request.request_state == "finished":
                     done = True
-                    if prov_request.status == "Error":
-                        return(1, "Provision Task {0} failed {1}".format(
-                            prov_request_name, prov_request.message))
+                    if request.status == "Error":
+                        return(1, "Task {0} failed {1}".format(
+                            request_name, request.message))
                 # wait for the request to be updated
-                sleep(PROV_REQ_WAIT)
+                sleep(REQ_WAIT)
             else:
-                error = "Provision Task not found, query: {0} returned " \
-                    "{1}".format(query, pro_req_list)
+                error = "Task not found, query: {0} returned " \
+                    "{1}".format(query, req_list)
                 log.warning(error)
                 return(1, error)
 
             if not done:
-                # update the provision requests collection
-                self.client.collections.provision_requests.reload
+                # update the requests collection
+                if type == "provision":
+                    self.client.collections.provision_requests.reload
+                elif type == "automation":
+                    self.client.collections.automation_requests.reload
             else:
-                return(0, "Task: {} was successful".format(prov_request_name))
+                return(0, "Task: {} was successful".format(request_name))

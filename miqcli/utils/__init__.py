@@ -182,6 +182,7 @@ def _abort_invalid_commands(ctx, name):
     log.abort('Command "{0}" is invalid. Please choose a valid command '
               'from the list above.'.format(name))
 
+
 def get_input_data(payload, payload_file):
     """
     helper function to get payload data from a string or json file.
