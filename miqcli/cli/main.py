@@ -15,22 +15,18 @@
 #
 
 import os
-import urllib3
 from copy import copy
 from functools import wraps
-from importlib import import_module
 
 import click
 from os import listdir
 
 from miqcli.api import ClientAPI
 from miqcli._compat import ServerProxy
-from miqcli.constants import CFG_DIR, CFG_NAME, COLLECTIONS_PACKAGE, \
-    COLLECTIONS_ROOT, DEFAULT_CONFIG, GLOBAL_PARAMS, PACKAGE, PYPI, VERSION
+from miqcli.constants import CFG_DIR, CFG_NAME, COLLECTIONS_ROOT, \
+    DEFAULT_CONFIG, GLOBAL_PARAMS, PACKAGE, PYPI, VERSION
 from miqcli.utils import Config, get_class_methods, log, \
-    is_default_config_used, _abort_invalid_commands
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    is_default_config_used, _abort_invalid_commands, get_collection_class
 
 
 class ManageIQ(click.MultiCommand):
@@ -83,12 +79,7 @@ class ManageIQ(click.MultiCommand):
         :return: Click command object.
         :rtype: object
         """
-        try:
-            miq_module = import_module(COLLECTIONS_PACKAGE + '.' + name)
-        except ImportError:
-            _abort_invalid_commands(ctx, name)
-        collection_cls = getattr(miq_module, 'Collections')
-        return SubCollections(collection_cls)
+        return SubCollections(get_collection_class(ctx, name))
 
     def invoke(self, ctx):
         """Invoke the command selected.
