@@ -66,6 +66,9 @@ DEFAULT_CONFIG = {
 OS_TYPE = "ManageIQ::Providers::Openstack::CloudManager"
 OS_NETWORK_TYPE = "ManageIQ::Providers::Openstack::NetworkManager"
 
+
+SUPPORTED_AUTOMATE_TYPES = ["gen_floating_ip"]
+
 SUPPORTED_PROVIDERS = ["OpenStack"]
 REQUIRED_OS_KEYS = ["email", "tenant", "image", "security_group", "network",
                     "flavor", "key_pair", "vm_name"]

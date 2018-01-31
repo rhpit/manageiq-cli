@@ -20,7 +20,7 @@ from collections import OrderedDict
 
 from miqcli.decorators import client_api
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OS_KEYS, \
-    OPENSTACK_PAYLOAD, FLOATINGIP_PAYLOAD, OS_TYPE, OS_NETWORK_TYPE
+    OPENSTACK_PAYLOAD, OS_TYPE, OS_NETWORK_TYPE
 from miqcli.utils import log, get_input_data
 
 
@@ -42,6 +42,13 @@ class Collections(object):
                        ' provision a resource')
     @client_api
     def create(self, provider, payload, payload_file):
+        """
+        Create a provisioning request
+        :param provider: Provider of the request
+        :param payload: json data in str format
+        :param payload_file: file location of the payload
+        :return:
+        """
         """Create."""
         # verify a valid provider
         if provider not in SUPPORTED_PROVIDERS:
@@ -68,6 +75,10 @@ class Collections(object):
             OPENSTACK_PAYLOAD["requester"]["owner_email"] = input_data["email"]
             OPENSTACK_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
+            if "floating_ip_id" in input_data and input_data["floating_ip_id"]:
+                OPENSTACK_PAYLOAD["vm_fields"]["floating_ip_address"] = \
+                    input_data["floating_ip_id"]
+
             # get the OpenStack provider types to add to all queries
             OS_type = OS_TYPE
             OS_network_type = OS_NETWORK_TYPE
@@ -91,6 +102,7 @@ class Collections(object):
                 [("name", "=", input_data["image"]), "&",
                  ("type", "=", OS_type + "::Template")],
                 "guid")
+
             # getting multiple matches for some reason???, just taking first
             # TODO investigate and fix
             if len(template_id_list) > 0:
@@ -153,49 +165,6 @@ class Collections(object):
                 log.abort("Querying for passed network: {0} failed".format(
                     input_data["tenant"]))
 
-            # set the floating ip if set by the user
-            if "fip_pool" in input_data and input_data["fip_pool"]:
-                pub_cloudnetwork_id_list = self.api.adv_query_getattr(
-                    self.api.get_collection("cloud_networks"),
-                    [("name", "=", input_data["fip_pool"]), "&",
-                     ("type", "=", OS_network_type + "::CloudNetwork::Public")
-                     ], "id")
-                FLOATINGIP_PAYLOAD["parameters"]["cloud_network_id"] = \
-                    pub_cloudnetwork_id_list[0]
-                FLOATINGIP_PAYLOAD["parameters"]["cloud_tenant_id"] = \
-                    cloudtenant_id_list[0]
-
-                automation_req_collection = self.api.get_collection(
-                    "automation_requests")
-                fip_req = automation_req_collection.action.create(
-                    FLOATINGIP_PAYLOAD)
-                request_id = fip_req[0].id
-                request_name = "Attempting to get a floating ip"
-
-                # not using the check_request data, just using the call to wait
-                # for the task to be complete
-                self.api.check_request(request_id, request_name,
-                                       type="automation")
-
-                options = self.api.query_getattr(automation_req_collection,
-                                                 ("id", "=", request_id),
-                                                 "options")
-
-                if "return" in options:
-                    return_data = options["return"]
-                else:
-                    # unexpected error, maybe Automate Datastore not imported?
-                    log.abort("Unexpected Error when getting floating ip")
-                return_dict = ast.literal_eval(return_data)
-                if return_dict["status"] == "success":
-                    fip, fip_id = return_dict["return"].items()[0]
-                    log.debug("got floating ip: {0}: {1}".format(fip, fip_id))
-                    OPENSTACK_PAYLOAD["vm_fields"]["floating_ip_address"] = \
-                        fip_id
-                else:
-                    log.abort("error occurred: {0}".format(
-                        return_dict["return"]))
-
             log.debug("Payload for the provisioning request: {0}".format(
                 OPENSTACK_PAYLOAD))
 
@@ -220,7 +189,13 @@ class Collections(object):
                   help='id of a specific provisioning request')
     @client_api
     def status(self, id):
-        """Get the status of provisioning requests."""
+        """
+        Get the status of a provisioning request
+
+        :param id: id of the provisioning request
+        :return: display output of the status and return a provisioning
+                 request object.
+        """
 
         status = OrderedDict()
         if id:
@@ -235,11 +210,11 @@ class Collections(object):
                     id, req.options["vm_name"]))
                 for key in status:
                     click.echo("{0}: {1}".format(key, status[key]))
-                return status
+                return req
             else:
                 log.abort("Unable to find a provision request with id: "
                           "{0}".format(id))
-                return status
+                return None
         else:
             click.echo("STATUS of all active provisioning requests:")
             provision_req_list = self.api.basic_query(
