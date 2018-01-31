@@ -22,7 +22,7 @@ from time import sleep
 # create a client object
 # pass in credentials, empty {} means it will use the default credentials
 client = Client({})
-print client
+print(client)
 
 # 1. pass input to a script to gen a floating ip
 payload_file = "openstack_provision_ex.json"
@@ -31,15 +31,15 @@ with open(payload_file) as f:
     try:
         payload_data = json.load(f)
     except ValueError as e:
-        print "Error loading json data: {0}".format(e)
+        print("Error loading json data: {0}".format(e))
 
-print payload_data
+print(payload_data)
 
 # 2. the script will first make an automate request to get a floating ip
 # (cli call to automate get_floating_ip) this call returns an id to watch
 client.collection = "automation_requests"
 id = client.collection.create('gen_floating_ip', str(payload_data), None)
-print id
+print(id)
 
 
 # 3. the script will keep querying automate_request for the status to be
@@ -53,7 +53,7 @@ while(not done):
     sleep(5)
 
 # see the return and options of the automate request
-print result.options
+print(result.options)
 
 # verify from the automate output that a floating ip was successfully
 # created, and extract the id of the floating ip address
@@ -61,24 +61,24 @@ if "return" in result.options:
     return_data = result.options["return"]
 else:
     # unexpected error, maybe Automate Datastore not imported?
-    print "Unexpected Error when getting floating ip"
+    print("Unexpected Error when getting floating ip")
 return_dict = ast.literal_eval(return_data)
 if return_dict["status"] == "success":
     fip, fip_id = return_dict["return"].items()[0]
-    print "got floating ip: {0}: {1}".format(fip, fip_id)
+    print("got floating ip: {0}: {1}".format(fip, fip_id))
 else:
-    print "error occurred: {0}".format(
-        return_dict["return"])
+    print("error occurred: {0}".format(
+        return_dict["return"]))
 
 # 4. the script will update the json data (in memory) w/ the floating_ip_id
 payload_data["floating_ip_id"] = fip_id
-print "updated payload data w/floating ip: {0}".format(payload_data)
+print("updated payload data w/floating ip: {0}".format(payload_data))
 
 # 5. call the provision request to create this vm (cli call to
 #  provision_request create --provider OpenStack this will return an id
 client.collection = 'provision_requests'
 id = client.collection.create('OpenStack', str(payload_data), "")
-print "ID of the provision request: {0}".format(id)
+print("ID of the provision request: {0}".format(id))
 
 
 # 6. the script will keep querying the provision_request task for the status
@@ -93,5 +93,5 @@ while(not done):
 
 req_state = result.request_state
 req_status = result.status
-print "State: {0} and Status: {1}".format(req_state, req_status)
-print "Request options: {0}".format(result.options)
+print("State: {0} and Status: {1}".format(req_state, req_status))
+print("Request options: {0}".format(result.options))
