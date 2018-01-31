@@ -15,7 +15,6 @@
 #
 
 from miqcli.decorators import client_api
-from miqcli.api import ClientAPI
 
 
 class Collections(object):
