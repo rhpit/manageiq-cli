@@ -18,7 +18,6 @@ import os
 import urllib3
 import errno
 import inspect
-from time import sleep
 
 from click import Context
 from click.globals import push_context
@@ -31,7 +30,7 @@ from manageiq_client.filters import Q
 
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import AUTHDIR, DEFAULT_CONFIG, TASK_WAIT, REQ_WAIT
+from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
 from miqcli.utils import log, get_collection_class
 
 __all__ = ['ClientAPI', 'Client']
@@ -382,108 +381,6 @@ class ClientAPI(object):
                     log.warning(error)
                     return ([])
                 return resources
-
-    def check_task(self, task_id, task_name):
-        """
-        check_task will keep checking a task until it is complete
-        and return if it was successful or not.
-
-        :param task_id: id of the task to check
-        :param task_name: message of the task being attempted
-        :return: tuple (0/1, message)
-        """
-        done = False
-        while (not done):
-            query = ("id", "=", task_id)
-            tasklist = self.basic_query(self.client.collections.tasks, query)
-            if len(tasklist) == 1:
-                task = tasklist[0]
-                log.debug("Task state: {0}".format(task.state))
-                log.debug("Task status: {0}".format(task.status))
-                if task.state == "Finished":
-                    done = True
-                    if task.status == "Error":
-                        return(1, "Task: {0} failed: {1}".format(
-                            task_name, task.message))
-                # wait for the task to be complete
-                sleep(TASK_WAIT)
-            else:
-                error = "Task not found, query: {0} returned {1}".format(
-                    query, tasklist
-                )
-                log.warning(error)
-                return(1, error)
-
-            if not done:
-                # update the tasks collection
-                self.client.collections.tasks.reload
-            else:
-                return(0, "Task: {} was successful.".format(task_name))
-
-    def check_request(self, request_id, request_name, type="provision"):
-        """
-        check_request will keep checking a provision or automation request
-        until it is complete and return if it was successful or not.
-        :param request_id: id of the provision request
-        :param request_name: message of the request being attempted
-        :param type: optional param can be provision or automation
-        :return: tuple (0/1, message)
-        """
-
-        done = False
-        state = ""
-        while (not done):
-            query = ("id", "=", request_id)
-            if type == "provision":
-                req_list = self.basic_query(
-                    self.client.collections.provision_requests,
-                    query
-                )
-            elif type == "automation":
-                req_list = self.basic_query(
-                    self.client.collections.automation_requests,
-                    query
-                )
-            else:
-                error = "Unsupported type of request attempated: "\
-                        "{0}".format(type)
-                log.warning(error)
-                return(1, error)
-            if len(req_list) == 1:
-                request = req_list[0]
-                if request.request_state != state:
-                    state = request.request_state
-                    log.info(state)
-                else:
-                    # give user feedback of the progress
-                    log.info(".")
-                log.debug("Request State: {0}".format(
-                    request.request_state)
-                )
-                log.debug("Request Status: {0}".format(
-                    request.status)
-                )
-                if request.request_state == "finished":
-                    done = True
-                    if request.status == "Error":
-                        return(1, "Task {0} failed {1}".format(
-                            request_name, request.message))
-                # wait for the request to be updated
-                sleep(REQ_WAIT)
-            else:
-                error = "Task not found, query: {0} returned " \
-                    "{1}".format(query, req_list)
-                log.warning(error)
-                return(1, error)
-
-            if not done:
-                # update the requests collection
-                if type == "provision":
-                    self.client.collections.provision_requests.reload
-                elif type == "automation":
-                    self.client.collections.automation_requests.reload
-            else:
-                return(0, "Task: {} was successful".format(request_name))
 
 
 class Client(object):

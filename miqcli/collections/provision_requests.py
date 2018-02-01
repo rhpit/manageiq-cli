@@ -19,8 +19,8 @@ import ast
 from collections import OrderedDict
 
 from miqcli.decorators import client_api
-from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OS_KEYS, \
-    OPENSTACK_PAYLOAD, OS_TYPE, OS_NETWORK_TYPE
+from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OSP_KEYS, \
+    OSP_PAYLOAD, OSP_TYPE, OSP_NETWORK_TYPE
 from miqcli.utils import log, get_input_data
 
 
@@ -63,7 +63,7 @@ class Collections(object):
 
             # verify all the required keys are set
             missing_data = []
-            for key in REQUIRED_OS_KEYS:
+            for key in REQUIRED_OSP_KEYS:
                 if key not in input_data or input_data[key] is None:
                     missing_data.append(key)
             if missing_data:
@@ -72,25 +72,25 @@ class Collections(object):
 
             # Verified data is valid, update payload w/id lookups
             # set the email_address and vm name
-            OPENSTACK_PAYLOAD["requester"]["owner_email"] = input_data["email"]
-            OPENSTACK_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
+            OSP_PAYLOAD["requester"]["owner_email"] = input_data["email"]
+            OSP_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
             if "floating_ip_id" in input_data and input_data["floating_ip_id"]:
-                OPENSTACK_PAYLOAD["vm_fields"]["floating_ip_address"] = \
+                OSP_PAYLOAD["vm_fields"]["floating_ip_address"] = \
                     input_data["floating_ip_id"]
 
             # get the OpenStack provider types to add to all queries
-            OS_type = OS_TYPE
-            OS_network_type = OS_NETWORK_TYPE
+            OSP_type = OSP_TYPE
+            OSP_network_type = OSP_NETWORK_TYPE
 
             # lookup flavor
             flavor_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("flavors"),
                 [("name", "=", input_data["flavor"]),
-                 "&", ("type", "=", OS_type + "::Flavor")],
+                 "&", ("type", "=", OSP_type + "::Flavor")],
                 "id")
             if len(flavor_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["instance_type"] = \
+                OSP_PAYLOAD["vm_fields"]["instance_type"] = \
                     flavor_id_list[0]
             else:
                 log.abort("Querying for passed flavor: {0} failed".format(
@@ -100,14 +100,13 @@ class Collections(object):
             template_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("templates"),
                 [("name", "=", input_data["image"]), "&",
-                 ("type", "=", OS_type + "::Template")],
+                 ("type", "=", OSP_type + "::Template")],
                 "guid")
 
             # getting multiple matches for some reason???, just taking first
             # TODO investigate and fix
             if len(template_id_list) > 0:
-                OPENSTACK_PAYLOAD["template_fields"]["guid"] = \
-                    template_id_list[0]
+                OSP_PAYLOAD["template_fields"]["guid"] = template_id_list[0]
             else:
                 log.abort("Querying for passed image: {0} failed".format(
                     input_data["image"]))
@@ -116,10 +115,10 @@ class Collections(object):
             secgroup_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("security_groups"),
                 [("name", "=", input_data["security_group"]), "&",
-                 ("type", "=", OS_network_type + "::SecurityGroup")],
+                 ("type", "=", OSP_network_type + "::SecurityGroup")],
                 "id")
             if len(secgroup_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["security_groups"] = \
+                OSP_PAYLOAD["vm_fields"]["security_groups"] = \
                     secgroup_id_list[0]
             else:
                 log.abort("Querying for passed security group: {0} "
@@ -129,10 +128,10 @@ class Collections(object):
             keypair_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("authentications"),
                 [("name", "=", input_data["key_pair"]), "&",
-                 ("type", "=", OS_type + "::AuthKeyPair")],
+                 ("type", "=", OSP_type + "::AuthKeyPair")],
                 "id")
             if len(keypair_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["guest_access_key_pair"] = \
+                OSP_PAYLOAD["vm_fields"]["guest_access_key_pair"] = \
                     keypair_id_list[0]
             else:
                 log.abort("Querying for passed keypair: {0} "
@@ -142,10 +141,10 @@ class Collections(object):
             cloudnetwork_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("cloud_networks"),
                 [("name", "=", input_data["network"]), "&",
-                 ("type", "=", OS_network_type + "::CloudNetwork::Private")],
+                 ("type", "=", OSP_network_type + "::CloudNetwork::Private")],
                 "id")
             if len(cloudnetwork_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["cloud_network"] = \
+                OSP_PAYLOAD["vm_fields"]["cloud_network"] = \
                     cloudnetwork_id_list[0]
             else:
                 log.abort("Querying for passed network: {0} "
@@ -155,20 +154,19 @@ class Collections(object):
             cloudtenant_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("cloud_tenants"),
                 [("name", "=", input_data["tenant"]), "&",
-                 ("type", "=", OS_type + "::CloudTenant")],
+                 ("type", "=", OSP_type + "::CloudTenant")],
                 "id")
 
             if len(cloudtenant_id_list) == 1:
-                OPENSTACK_PAYLOAD["vm_fields"]["cloud_tenant"] = \
+                OSP_PAYLOAD["vm_fields"]["cloud_tenant"] = \
                     cloudtenant_id_list[0]
             else:
                 log.abort("Querying for passed network: {0} failed".format(
                     input_data["tenant"]))
 
             log.debug("Payload for the provisioning request: {0}".format(
-                OPENSTACK_PAYLOAD))
-
-            outcome = self.action(OPENSTACK_PAYLOAD)
+                OSP_PAYLOAD))
+            outcome = self.action(OSP_PAYLOAD)
             provreq_id = outcome[0].id
             log.info("Provisioning request created: {0}".format(provreq_id))
             return(provreq_id)
@@ -224,10 +222,10 @@ class Collections(object):
             if provision_req_list:
                 for prov_req in provision_req_list:
                     click.echo("ID: {0}\tInstance: {1}\tSTATE: {2}\t STATUS:"
-                               "{3}".format(prov_req.id,
-                                            prov_req.options["vm_name"],
-                                            prov_req.request_state,
-                                            prov_req.status))
+                               " {3}".format(prov_req.id,
+                                             prov_req.options["vm_name"],
+                                             prov_req.request_state,
+                                             prov_req.status))
             else:
                 click.echo("No active provisioning requests")
             return(provision_req_list)

@@ -14,31 +14,28 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import click
 from collections import OrderedDict
 
+import click
+from manageiq_client.api import APIException
 
-from miqcli.constants import FLOATINGIP_PAYLOAD, SUPPORTED_AUTOMATE_TYPES, \
-    OS_NETWORK_TYPE, OS_TYPE
-
-from miqcli.utils import log, get_input_data
-
+from miqcli.constants import OSP_FIP_PAYLOAD, OSP_NETWORK_TYPE, OSP_TYPE
 from miqcli.decorators import client_api
+from miqcli.utils import log, get_input_data
 
 
 class Collections(object):
     """Automation requests collections."""
 
     @click.option('--type', type=str,
-                  help='type of automation request',
-                  required=True)
+                  help='type of automation request')
     @click.option('--payload', type=str,
                   help='payload data for an automation request')
     @click.option('--payload_file', type=str,
                   help='file name of the payload data for an '
                        'automation request')
     @client_api
-    def create(self, type, payload, payload_file):
+    def create(self, payload, payload_file, type=None):
         """
         Create an automation request
 
@@ -49,14 +46,18 @@ class Collections(object):
         """
         log.info("Attempt to create an automation request")
 
-        # Verify the request is a supported request
-        if type not in SUPPORTED_AUTOMATE_TYPES:
-            log.abort("Invalid request, automate only supports options: "
-                      "{0}".format(SUPPORTED_AUTOMATE_TYPES))
-
         # get the data from user input
         input_data = get_input_data(payload, payload_file)
 
+        if type is None:
+            # default behavior is just a passthrough of payload data
+            try:
+                outcome = self.action(input_data)
+                autoreq_id = outcome[0].id
+                return (autoreq_id)
+            except APIException as e:
+                log.abort("Exception occured creating an automation request:"
+                          " {0}".format(e))
         if type == "gen_floating_ip":
             # set the floating ip if set by the user
             if "fip_pool" in input_data and input_data["fip_pool"]:
@@ -65,30 +66,37 @@ class Collections(object):
                 pub_cloudnetwork_id_list = self.api.adv_query_getattr(
                     self.api.get_collection("cloud_networks"),
                     [("name", "=", input_data["fip_pool"]), "&",
-                     ("type", "=", OS_NETWORK_TYPE + "::CloudNetwork::Public")
+                     ("type", "=", OSP_NETWORK_TYPE + "::CloudNetwork::Public")
                      ], "id")
+
+                if len(pub_cloudnetwork_id_list) == 1:
+                    OSP_FIP_PAYLOAD["parameters"]["cloud_network_id"] = \
+                        pub_cloudnetwork_id_list[0]
+                else:
+                    log.abort("Querying for passed network: {0} failed".format(
+                        input_data["fip_pool"]))
+
                 # lookup cloud tenant
                 cloudtenant_id_list = self.api.adv_query_getattr(
                     self.api.get_collection("cloud_tenants"),
                     [("name", "=", input_data["tenant"]), "&",
-                     ("type", "=", OS_TYPE + "::CloudTenant")],
+                     ("type", "=", OSP_TYPE + "::CloudTenant")],
                     "id")
 
                 if len(cloudtenant_id_list) == 1:
-                    FLOATINGIP_PAYLOAD["parameters"]["cloud_tenant_id"] = \
+                    OSP_FIP_PAYLOAD["parameters"]["cloud_tenant_id"] = \
                         cloudtenant_id_list[0]
                 else:
-                    log.abort("Querying for passed network: {0} failed".format(
+                    log.abort("Querying for cloud tenant: {0} failed".format(
                         input_data["tenant"]))
 
-                FLOATINGIP_PAYLOAD["parameters"]["cloud_network_id"] = \
-                    pub_cloudnetwork_id_list[0]
-
-                outcome = self.action(FLOATINGIP_PAYLOAD)
+                outcome = self.action(OSP_FIP_PAYLOAD)
                 autoreq_id = outcome[0].id
                 log.info("Automation request to generate a floating ip "
                          "created: {0}".format(autoreq_id))
                 return(autoreq_id)
+        else:
+            log.abort("Invalid automation request: {0}".format(type))
 
     @client_api
     def approve(self):
@@ -136,10 +144,10 @@ class Collections(object):
             if automation_req_list:
                 for auto_req in automation_req_list:
                     click.echo("ID: {0}\tInstance: {1}\tSTATE: {2}\t STATUS:"
-                               "{3}".format(auto_req.id,
-                                            auto_req.options,
-                                            auto_req.request_state,
-                                            auto_req.status))
+                               " {3}".format(auto_req.id,
+                                             auto_req.options,
+                                             auto_req.request_state,
+                                             auto_req.status))
             else:
                 click.echo("No active provisioning requests")
             return(automation_req_list)

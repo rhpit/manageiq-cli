@@ -63,46 +63,52 @@ DEFAULT_CONFIG = {
     'enable_ssl_verify': False
 }
 
-OS_TYPE = "ManageIQ::Providers::Openstack::CloudManager"
-OS_NETWORK_TYPE = "ManageIQ::Providers::Openstack::NetworkManager"
-
-
-SUPPORTED_AUTOMATE_TYPES = ["gen_floating_ip"]
+OSP_TYPE = "ManageIQ::Providers::Openstack::CloudManager"
+OSP_NETWORK_TYPE = "ManageIQ::Providers::Openstack::NetworkManager"
 
 SUPPORTED_PROVIDERS = ["OpenStack"]
-REQUIRED_OS_KEYS = ["email", "tenant", "image", "security_group", "network",
-                    "flavor", "key_pair", "vm_name"]
-OPTIONAL_OS_KEYS = ["fip_pool"]
+REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
+                     "flavor", "key_pair", "vm_name"]
+OPTIONAL_OSP_KEYS = ["fip_pool"]
 
 #: filesystem root for miqcli authentication store
 AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
 
-#: time to wait in secs in between checks of a task
-TASK_WAIT = 2
+OSP_PAYLOAD = {
+    "template_fields": {
+        "guid": None
+    },
+    "requester": {
+        "owner_email": None
+    },
+    "vm_fields": {
+        "cloud_network": None,
+        "placement_auto": "false",
+        "cloud_tenant": None,
+        "security_groups": None,
+        "instance_type": None,
+        "guest_access_key_pair": None,
+        "vm_name": None,
+        "delete_on_terminate": "true",
+        "floating_ip_address": None
+    }
+}
 
-#: time to wait in secs in between checks of a request (provision or automate)
-REQ_WAIT = 5
+OSP_FIP_PAYLOAD = {
+    "uri_parts": {
+        "namespace": "CF_MIQ_CLI/General",
+        "class": "Methods",
+        "instance": "get_floating_ip"
+    },
+    "parameters": {
+        "cloud_network_id": None,
+        "cloud_tenant_id": None
+    },
+    "requester": {
+        "auto_approve": "true"
+    }
+}
 
-OPENSTACK_PAYLOAD = {}
-OPENSTACK_PAYLOAD["template_fields"] = {"guid": None}
-OPENSTACK_PAYLOAD["requester"] = {"owner_email": None}
-OPENSTACK_PAYLOAD["vm_fields"] = {"cloud_network": None,
-                                  "placement_auto": "false",
-                                  "cloud_tenant": None,
-                                  "security_groups": None,
-                                  "instance_type": None,
-                                  "guest_access_key_pair": None,
-                                  "vm_name": None,
-                                  "delete_on_terminate": "true",
-                                  "floating_ip_address": None}
-
-FLOATINGIP_PAYLOAD = {}
-FLOATINGIP_PAYLOAD["uri_parts"] = {"namespace": "CF_MIQ_CLI/General",
-                                   "class": "Methods",
-                                   "instance": "get_floating_ip"}
-FLOATINGIP_PAYLOAD["parameters"] = {"cloud_network_id": None,
-                                    "cloud_tenant_id": None}
-FLOATINGIP_PAYLOAD["requester"] = {"auto_approve": "true"}
 
 #: cli entry point click parameters
 GLOBAL_PARAMS = [

@@ -33,12 +33,10 @@ with open(payload_file) as f:
     except ValueError as e:
         print("Error loading json data: {0}".format(e))
 
-print(payload_data)
-
 # 2. the script will first make an automate request to get a floating ip
 # (cli call to automate get_floating_ip) this call returns an id to watch
 client.collection = "automation_requests"
-id = client.collection.create('gen_floating_ip', str(payload_data), None)
+id = client.collection.create(str(payload_data), None, type='gen_floating_ip')
 print(id)
 
 
@@ -53,7 +51,7 @@ while(not done):
     sleep(5)
 
 # see the return and options of the automate request
-print(result.options)
+print("Options from the automate request: {0}".format(result.options))
 
 # verify from the automate output that a floating ip was successfully
 # created, and extract the id of the floating ip address
@@ -62,6 +60,7 @@ if "return" in result.options:
 else:
     # unexpected error, maybe Automate Datastore not imported?
     print("Unexpected Error when getting floating ip")
+    raise SystemExit(1)
 return_dict = ast.literal_eval(return_data)
 if return_dict["status"] == "success":
     fip, fip_id = return_dict["return"].items()[0]
@@ -94,4 +93,3 @@ while(not done):
 req_state = result.request_state
 req_status = result.status
 print("State: {0} and Status: {1}".format(req_state, req_status))
-print("Request options: {0}".format(result.options))
