@@ -7,10 +7,10 @@
 # for the oficial image is 'admin' and the password is 'smartvm'
 #
 # To start a container:
-# $ scripts/init_testenv -c start [-n <container_name>]
+# $ scripts/testinstance -c start [-n <container_name>]
 #
 # To stop and remove the container:
-# $ scripts/init_testenv -c stop [-n <container_name>]
+# $ scripts/testinstance -c stop [-n <container_name>]
 #
 # WARNING: this script can delete a running container in your
 # system if you specify the name of this container with the
