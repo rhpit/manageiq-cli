@@ -79,15 +79,11 @@ class Collections(object):
                 OSP_PAYLOAD["vm_fields"]["floating_ip_address"] = \
                     input_data["floating_ip_id"]
 
-            # get the OpenStack provider types to add to all queries
-            OSP_type = OSP_TYPE
-            OSP_network_type = OSP_NETWORK_TYPE
-
             # lookup flavor
             flavor_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("flavors"),
                 [("name", "=", input_data["flavor"]),
-                 "&", ("type", "=", OSP_type + "::Flavor")],
+                 "&", ("type", "=", OSP_TYPE + "::Flavor")],
                 "id")
             if len(flavor_id_list) == 1:
                 OSP_PAYLOAD["vm_fields"]["instance_type"] = \
@@ -100,7 +96,7 @@ class Collections(object):
             template_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("templates"),
                 [("name", "=", input_data["image"]), "&",
-                 ("type", "=", OSP_type + "::Template")],
+                 ("type", "=", OSP_TYPE + "::Template")],
                 "guid")
 
             # getting multiple matches for some reason???, just taking first
@@ -115,7 +111,7 @@ class Collections(object):
             secgroup_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("security_groups"),
                 [("name", "=", input_data["security_group"]), "&",
-                 ("type", "=", OSP_network_type + "::SecurityGroup")],
+                 ("type", "=", OSP_NETWORK_TYPE + "::SecurityGroup")],
                 "id")
             if len(secgroup_id_list) == 1:
                 OSP_PAYLOAD["vm_fields"]["security_groups"] = \
@@ -128,7 +124,7 @@ class Collections(object):
             keypair_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("authentications"),
                 [("name", "=", input_data["key_pair"]), "&",
-                 ("type", "=", OSP_type + "::AuthKeyPair")],
+                 ("type", "=", OSP_TYPE + "::AuthKeyPair")],
                 "id")
             if len(keypair_id_list) == 1:
                 OSP_PAYLOAD["vm_fields"]["guest_access_key_pair"] = \
@@ -141,7 +137,7 @@ class Collections(object):
             cloudnetwork_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("cloud_networks"),
                 [("name", "=", input_data["network"]), "&",
-                 ("type", "=", OSP_network_type + "::CloudNetwork::Private")],
+                 ("type", "=", OSP_NETWORK_TYPE + "::CloudNetwork::Private")],
                 "id")
             if len(cloudnetwork_id_list) == 1:
                 OSP_PAYLOAD["vm_fields"]["cloud_network"] = \
@@ -154,7 +150,7 @@ class Collections(object):
             cloudtenant_id_list = self.api.adv_query_getattr(
                 self.api.get_collection("cloud_tenants"),
                 [("name", "=", input_data["tenant"]), "&",
-                 ("type", "=", OSP_type + "::CloudTenant")],
+                 ("type", "=", OSP_TYPE + "::CloudTenant")],
                 "id")
 
             if len(cloudtenant_id_list) == 1:
