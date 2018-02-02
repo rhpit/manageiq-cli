@@ -1,4 +1,4 @@
-Prepare Test Environment
+Test Environment Scripts
 ========================
 
 These scripts prepare the test environment.
