@@ -1,0 +1,11 @@
+{
+    "email": "<email_address>",
+    "tenant": "<tenant_name>",
+    "image": "<image_name>",
+    "security_group": "<security_group>",
+    "network": "<network>",
+    "flavor": "<flavor>",
+    "key_pair": "<key_pair>",
+    "vm_name": "<instance_name>",
+    "fip_pool": "<floating_ip_pool>"
+}
