@@ -1,0 +1,198 @@
+#!/usr/bin/env python
+
+#
+# This script was built specifically to run integration tests
+# for this project. It starts a container instance in Docker
+# running ManageIQ, a port redirect at 8443. The default username
+# for the oficial image is 'admin' and the password is 'smartvm'
+#
+# To start a container:
+# $ scripts/testinstance -c start [-n <container_name>]
+#
+# To stop and remove the container:
+# $ scripts/testinstance -c stop [-n <container_name>]
+#
+# WARNING: this script can delete a running container in your
+# system if you specify the name of this container with the
+# 'stop' command.
+#
+
+
+import sys
+import getopt
+import argparse
+import time
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+import requests
+
+# Constants
+MANAGEIQ_IMAGE_NAME = u'docker.io/manageiq/manageiq'
+MANAGEIQ_IMAGE_TAG = u'fine-4'
+MANAGEIQ_IMAGE_SHA256 = u'sha256:cb94310bdfc63fbbf98741772334fc197d0ce2a932e0a3cd0764156c70d20462'
+
+# Globals
+client = None
+container = None
+
+# check if docker lib is installed
+try:
+    import docker
+except:
+    print('Docker python lib not found.')
+    exit(1)
+
+
+def build_docker_image_id(name, tag=None, digest=None):
+    """
+    Build an image ID to pull from docker. Digest has preference.
+    The format is accordingly with the format at Docker's documentation:
+
+    NAME[:TAG|@DIGEST]
+
+    """
+    if digest:
+        return '{0}{1}'.format(name, '@%s' % digest).strip()
+    else:
+        return '{0}{1}'.format(
+            name, ':%s' % tag if tag is not None else '').strip()
+
+
+def pull_docker_image(name, tag=None, stream=False,
+                      insecure_registry=False, auth_config=None,
+                      decode=False):
+    """Pull docker image"""
+    global client
+    print("Downloading image...")
+    return client.images.pull(name=name, tag=tag, stream=stream,
+                              insecure_registry=insecure_registry,
+                              auth_config=auth_config, decode=decode)
+
+
+def check_docker_image_exist(name, tag=None):
+    global client
+    repotag = build_docker_image_id(name, tag=tag)
+    for img in client.images.list():
+        if img.attrs.has_key('RepoTags') and repotag \
+                in img.attrs['RepoTags']:
+            print("Image '%s' found." % repotag)
+            return True
+    return False
+
+
+def connect():
+    """Create a client connection with local docker"""
+    global client
+    # check if docker exist and is running
+    client = docker.from_env()
+    if not client.ping():
+        print('Docker is not running or not installed.')
+        exit(1)
+
+    docker_version = client.version()
+    print("""
+    Docker API version: {api_version}
+        Docker version: {version}
+    """.format(api_version=docker_version['ApiVersion'],
+               version=docker_version['Version']))
+
+
+def start(c_name):
+    """Start a container and give it a name `c_name`"""
+    global client
+    # check if image exists otherwise download it
+    if not check_docker_image_exist(name=MANAGEIQ_IMAGE_NAME,
+                                    tag=MANAGEIQ_IMAGE_TAG):
+        pull_docker_image(name=MANAGEIQ_IMAGE_NAME,
+                          tag=MANAGEIQ_IMAGE_TAG)
+    else:
+        for image in client.images.list():
+            if image.id == MANAGEIQ_IMAGE_SHA256:
+                break
+
+    # run a new instance of ManageIQ container
+    print('Starting new container...')
+    global container
+    container = client.containers.run(
+        build_docker_image_id(name=MANAGEIQ_IMAGE_NAME, tag=MANAGEIQ_IMAGE_TAG),
+        privileged=True,
+        ports={'443/tcp': 8443},
+        detach=True,
+        name='{0}'.format(c_name if c_name is not None else 'miqcli_test')
+    )
+    print("Container started and it is detached.")
+
+
+def stop(c_name):
+    """Stop a container by name"""
+
+    global client
+    c_instance = None
+
+    for c in client.containers.list():
+        if c.name == c_name:
+            c_instance = c
+            break
+
+    if c_instance:
+        try:
+            print('Stopping container %s...' % c_instance.name)
+            c_instance.stop()
+            c_instance.remove()
+            print('Container stopped and deleted.')
+        except Exception as e:
+            print('Error stopping container \'%s\'.' % c_name)
+            print(e.message)
+            exit(1)
+    else:
+        print('Container \'%s\' not found!' % c_name)
+
+
+def wait_manageiq_start():
+    # check if ManageIQ instance is running
+    print("Waiting for ManageIQ to start up...")
+    max_retries = 20
+    retry = 0
+    while retry < max_retries:
+        headers = {'Accept': 'application/json'}
+        auth = requests.auth.HTTPBasicAuth('admin', 'smartvm')
+        r = None
+        try:
+            r = requests.get('https://localhost:8443/api',
+                             headers=headers, auth=auth, timeout=3.0, verify=False)
+        except requests.exceptions.Timeout:
+            pass
+        except requests.exceptions.ConnectionError:
+            pass
+        if r and r.status_code == 200:
+            print("Connected!")
+            break
+        retry += 1
+        time.sleep(5)
+    print("ManageIQ to started!")
+
+
+def main(args):
+    connect()
+    if args.command == 'start':
+        start(args.name)
+        wait_manageiq_start()
+    elif args.command == 'stop':
+        stop(args.name)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Script to manage testing container')
+
+    parser.add_argument('-c', action='store', dest='command',
+                        choices=['start', 'stop'], default='start',
+                        required=True, help='command to perform')
+
+    parser.add_argument('-n', action='store', dest='name',
+                        default='miqcli_test',
+                        help='container a name, default \'miqcli_test\'')
+
+    parsed_args = parser.parse_args()
+    main(parsed_args)
