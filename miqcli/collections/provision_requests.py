@@ -15,12 +15,11 @@
 #
 
 import click
-import ast
 from collections import OrderedDict
 
-from miqcli.decorators import client_api
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OSP_KEYS, \
     OSP_PAYLOAD, OSP_TYPE, OSP_NETWORK_TYPE
+from miqcli.decorators import client_api
 from miqcli.utils import log, get_input_data
 
 
@@ -32,29 +31,30 @@ class Collections(object):
         """Approve."""
         raise NotImplementedError
 
-    @click.option('--provider', type=str,
-                  help='set a supported provider',
-                  required=True)
+    @click.option('--provider', type=click.Choice(SUPPORTED_PROVIDERS),
+                  help='provider to fulfill the provision request into.')
     @click.option('--payload', type=str,
-                  help='payload data for a provisioning request')
+                  help='provision request payload data.')
     @click.option('--payload_file', type=str,
-                  help='file name of a json file of the data to'
-                       ' provision a resource')
+                  help='filename containing JSON formatted payload data for '
+                       'provision request.')
     @client_api
     def create(self, provider, payload, payload_file):
-        """
-        Create a provisioning request
-        :param provider: Provider of the request
-        :param payload: json data in str format
-        :param payload_file: file location of the payload
-        :return:
-        """
-        """Create."""
-        # verify a valid provider
-        if provider not in SUPPORTED_PROVIDERS:
-            log.abort("Unsupported Provider, please select one from the "
-                      "supported list: {0}".format(SUPPORTED_PROVIDERS))
+        """Create a provision request.
 
+        ::
+        Builds the payload data for the request (performing all necessary id
+        lookups) and then submits the provision request to the server.
+
+        :param provider: cloud provider to fulfill provision request into
+        :type provider: str
+        :param payload: json data in str format
+        :type payload: str
+        :param payload_file: file location of the payload
+        :type payload_file: str
+        :return: provision request ID
+        :rtype: str
+        """
         if provider == "OpenStack":
             log.info("Attempt to create a provision request")
 
@@ -183,8 +183,11 @@ class Collections(object):
                   help='id of a specific provisioning request')
     @client_api
     def status(self, id):
-        """
-        Get the status of a provisioning request
+        """Print the status for a provision request.
+
+        ::
+        Handles getting information for an existing provision request and
+        displaying/returning back to the user.
 
         :param id: id of the provisioning request
         :return: display output of the status and return a provisioning
