@@ -61,7 +61,7 @@ def client_api(method):
         try:
             setattr(args[0], 'action', getattr(
                 _collection.action, method.__name__))
-        except AttributeError:
+        except (AttributeError, RuntimeError):
             # action does not exist
             setattr(args[0], 'action', None)
 
