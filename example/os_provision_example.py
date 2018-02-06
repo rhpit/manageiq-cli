@@ -36,16 +36,17 @@ with open(payload_file) as f:
 # 2. the script will first make an automate request to get a floating ip
 # (cli call to automate get_floating_ip) this call returns an id to watch
 client.collection = "automation_requests"
-id = client.collection.create(str(payload_data), None, type='gen_floating_ip')
-print(id)
+req_id = client.collection.create(
+    method='gen_floating_ip', payload=str(payload_data), payload_file=None)
+print(req_id)
 
 
 # 3. the script will keep querying automate_request for the status to be
 #  finished, once finished, it will query for the floating ip id. If there was
 #  an error, the script will display the error message and exit.
 done = False
-while(not done):
-    result = client.collection.status(id)
+while not done:
+    result = client.collection.status(req_id)
     if result.request_state == "finished":
         done = True
     sleep(5)
@@ -76,16 +77,16 @@ print("updated payload data w/floating ip: {0}".format(payload_data))
 # 5. call the provision request to create this vm (cli call to
 #  provision_request create --provider OpenStack this will return an id
 client.collection = 'provision_requests'
-id = client.collection.create('OpenStack', str(payload_data), "")
-print("ID of the provision request: {0}".format(id))
+req_id = client.collection.create('OpenStack', str(payload_data), "")
+print("ID of the provision request: {0}".format(req_id))
 
 
 # 6. the script will keep querying the provision_request task for the status
 #  to be finished, once finished, it will return information about the
 #  provisioned machine or display the error message
 done = False
-while(not done):
-    result = client.collection.status(id)
+while not done:
+    result = client.collection.status(req_id)
     if result.request_state == "finished":
         done = True
     sleep(5)
