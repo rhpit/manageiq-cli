@@ -28,7 +28,8 @@ from miqcli.utils import log
 
 __all__ = ['Config', 'get_class_methods', 'get_client_api_pointer',
            'is_default_config_used', 'display_commands',
-           '_abort_invalid_commands', 'get_collection_class']
+           '_abort_invalid_commands', 'get_collection_class',
+           'get_input_data']
 
 
 class Config(dict):

@@ -63,9 +63,7 @@ DEFAULT_CONFIG = {
     'enable_ssl_verify': False
 }
 
-OSP_TYPE = "ManageIQ::Providers::Openstack::CloudManager"
-OSP_NETWORK_TYPE = "ManageIQ::Providers::Openstack::NetworkManager"
-
+SUPPORTED_AUTOMATE_REQUESTS = ['generic', 'gen_floating_ip']
 SUPPORTED_PROVIDERS = ["OpenStack"]
 REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
                      "flavor", "key_pair", "vm_name"]

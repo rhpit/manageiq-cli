@@ -14,12 +14,16 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from pprint import pformat
+
 import click
 from collections import OrderedDict
 
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OSP_KEYS, \
-    OSP_PAYLOAD, OSP_TYPE, OSP_NETWORK_TYPE
+    OSP_PAYLOAD
 from miqcli.decorators import client_api
+from miqcli.provider import Flavors, KeyPair, Networks, SecurityGroups,\
+    Templates, Tenant
 from miqcli.utils import log, get_input_data
 
 
@@ -32,7 +36,8 @@ class Collections(object):
         raise NotImplementedError
 
     @click.option('--provider', type=click.Choice(SUPPORTED_PROVIDERS),
-                  help='provider to fulfill the provision request into.')
+                  required=True, help='provider to fulfill the provision '
+                                      'request into.')
     @click.option('--payload', type=str,
                   help='provision request payload data.')
     @click.option('--payload_file', type=str,
@@ -55,6 +60,7 @@ class Collections(object):
         :return: provision request ID
         :rtype: str
         """
+        # RFE: make generic as possible, remove conditional per provider
         if provider == "OpenStack":
             log.info("Attempt to create a provision request")
 
@@ -75,99 +81,51 @@ class Collections(object):
             OSP_PAYLOAD["requester"]["owner_email"] = input_data["email"]
             OSP_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
-            if "floating_ip_id" in input_data and input_data["floating_ip_id"]:
-                OSP_PAYLOAD["vm_fields"]["floating_ip_address"] = \
-                    input_data["floating_ip_id"]
+            if 'floating_ip_id' in input_data:
+                OSP_PAYLOAD['vm_fields']['floating_ip_address'] = \
+                    input_data['floating_ip_id']
 
-            # lookup flavor
-            flavor_id_list = self.api.adv_query_getattr(
-                self.api.get_collection("flavors"),
-                [("name", "=", input_data["flavor"]),
-                 "&", ("type", "=", OSP_TYPE + "::Flavor")],
-                "id")
-            if len(flavor_id_list) == 1:
-                OSP_PAYLOAD["vm_fields"]["instance_type"] = \
-                    flavor_id_list[0]
-            else:
-                log.abort("Querying for passed flavor: {0} failed".format(
-                    input_data["flavor"]))
+            # lookup flavor resource to get the id
+            flavors = Flavors(provider, self.api)
+            OSP_PAYLOAD['vm_fields']['instance_type'] = flavors.get_id(
+                input_data['flavor'])
 
-            # lookup image
-            template_id_list = self.api.adv_query_getattr(
-                self.api.get_collection("templates"),
-                [("name", "=", input_data["image"]), "&",
-                 ("type", "=", OSP_TYPE + "::Template")],
-                "guid")
+            # lookup image resource to get the id
+            templates = Templates(provider, self.api)
+            OSP_PAYLOAD['template_fields']['guid'] = templates.get_id(
+                input_data['image']
+            )
 
-            # getting multiple matches for some reason???, just taking first
-            # TODO investigate and fix
-            if len(template_id_list) > 0:
-                OSP_PAYLOAD["template_fields"]["guid"] = template_id_list[0]
-            else:
-                log.abort("Querying for passed image: {0} failed".format(
-                    input_data["image"]))
+            # lookup security group resource to get the id
+            sec_group = SecurityGroups(provider, self.api)
+            OSP_PAYLOAD['vm_fields']['security_groups'] = sec_group.get_id(
+                input_data['security_group']
+            )
 
-            # lookup  security group
-            secgroup_id_list = self.api.adv_query_getattr(
-                self.api.get_collection("security_groups"),
-                [("name", "=", input_data["security_group"]), "&",
-                 ("type", "=", OSP_NETWORK_TYPE + "::SecurityGroup")],
-                "id")
-            if len(secgroup_id_list) == 1:
-                OSP_PAYLOAD["vm_fields"]["security_groups"] = \
-                    secgroup_id_list[0]
-            else:
-                log.abort("Querying for passed security group: {0} "
-                          "failed".format(input_data["security_group"]))
+            # lookup key pair resource to get the id
+            key_pair = KeyPair(provider, self.api)
+            OSP_PAYLOAD['vm_fields']['guest_access_key_pair'] = \
+                key_pair.get_id(input_data['key_pair'])
 
-            # lookup keypair
-            keypair_id_list = self.api.adv_query_getattr(
-                self.api.get_collection("authentications"),
-                [("name", "=", input_data["key_pair"]), "&",
-                 ("type", "=", OSP_TYPE + "::AuthKeyPair")],
-                "id")
-            if len(keypair_id_list) == 1:
-                OSP_PAYLOAD["vm_fields"]["guest_access_key_pair"] = \
-                    keypair_id_list[0]
-            else:
-                log.abort("Querying for passed keypair: {0} "
-                          "failed".format(input_data["key_pair"]))
+            # lookup cloud network resource to get the id
+            network = Networks(provider, self.api, 'private')
+            OSP_PAYLOAD['vm_fields']['cloud_network'] = network.get_id(
+                input_data['network']
+            )
 
-            # lookup cloud network
-            cloudnetwork_id_list = self.api.adv_query_getattr(
-                self.api.get_collection("cloud_networks"),
-                [("name", "=", input_data["network"]), "&",
-                 ("type", "=", OSP_NETWORK_TYPE + "::CloudNetwork::Private")],
-                "id")
-            if len(cloudnetwork_id_list) == 1:
-                OSP_PAYLOAD["vm_fields"]["cloud_network"] = \
-                    cloudnetwork_id_list[0]
-            else:
-                log.abort("Querying for passed network: {0} "
-                          "failed".format(input_data["network"]))
-
-            # lookup cloud tenant
-            cloudtenant_id_list = self.api.adv_query_getattr(
-                self.api.get_collection("cloud_tenants"),
-                [("name", "=", input_data["tenant"]), "&",
-                 ("type", "=", OSP_TYPE + "::CloudTenant")],
-                "id")
-
-            if len(cloudtenant_id_list) == 1:
-                OSP_PAYLOAD["vm_fields"]["cloud_tenant"] = \
-                    cloudtenant_id_list[0]
-            else:
-                log.abort("Querying for passed network: {0} failed".format(
-                    input_data["tenant"]))
+            # lookup cloud tenant resource to get the id
+            tenant = Tenant(provider, self.api)
+            OSP_PAYLOAD['vm_fields']['cloud_tenant'] = tenant.get_id(
+                input_data['tenant']
+            )
 
             log.debug("Payload for the provisioning request: {0}".format(
-                OSP_PAYLOAD))
+                pformat(OSP_PAYLOAD)))
             outcome = self.action(OSP_PAYLOAD)
-            provreq_id = outcome[0].id
-            log.info("Provisioning request created: {0}".format(provreq_id))
-            return(provreq_id)
-        else:
-            log.abort("Unsupported provider: {0}".format(provider))
+            # BUG: #93
+            req_id = outcome[0].id
+            log.info("Provisioning request created: {0}".format(req_id))
+            return req_id
 
     @client_api
     def deny(self):
@@ -179,52 +137,60 @@ class Collections(object):
         """Query."""
         raise NotImplementedError
 
-    @click.option('--id', type=str,
-                  help='id of a specific provisioning request')
+    @click.argument('req_id', metavar='ID', type=str, default='')
     @client_api
-    def status(self, id):
+    def status(self, req_id):
         """Print the status for a provision request.
 
         ::
         Handles getting information for an existing provision request and
         displaying/returning back to the user.
 
-        :param id: id of the provisioning request
-        :return: display output of the status and return a provisioning
-                 request object.
+        :param req_id: id of the provisioning request
+        :type req_id: str
+        :return: provision request object or list of provision request objects
         """
-
         status = OrderedDict()
-        if id:
-            provision_req_list = self.api.basic_query(self.collection,
-                                                      ("id", "=", id))
-            if len(provision_req_list) == 1:
-                req = provision_req_list[0]
-                status["state"] = req.request_state
-                status["status"] = req.status
-                status["message"] = req.message
-                click.echo("STATUS of provision request {0} ({1})".format(
-                    id, req.options["vm_name"]))
-                for key in status:
-                    click.echo("{0}: {1}".format(key, status[key]))
-                return req
-            else:
-                log.abort("Unable to find a provision request with id: "
-                          "{0}".format(id))
-                return None
-        else:
-            click.echo("STATUS of all active provisioning requests:")
-            provision_req_list = self.api.basic_query(
-                self.collection,
-                ("request_state", "!=", "finished"))
 
-            if provision_req_list:
-                for prov_req in provision_req_list:
-                    click.echo("ID: {0}\tInstance: {1}\tSTATE: {2}\t STATUS:"
-                               " {3}".format(prov_req.id,
-                                             prov_req.options["vm_name"],
-                                             prov_req.request_state,
-                                             prov_req.status))
-            else:
-                click.echo("No active provisioning requests")
-            return(provision_req_list)
+        if req_id:
+            provision_requests = self.api.basic_query(
+                self.collection, ("id", "=", req_id))
+
+            if len(provision_requests) < 1:
+                log.warning('Provision request id: %s not found!' % req_id)
+                return None
+
+            req = provision_requests[0]
+            status['state'] = req.request_state
+            status['status'] = req.status
+            status['message'] = req.message
+            log.info('-' * 50)
+            log.info('Provision request'.center(50))
+            log.info('-' * 50)
+            log.info(' * ID: %s' % req_id)
+            log.info(' * VM: %s' % req.options['vm_name'])
+            for key, value in status.items():
+                log.info(' * %s: %s' % (key.upper(), value))
+            log.info('-' * 50)
+
+            return req
+        else:
+            provision_requests = self.api.basic_query(
+                self.collection, ("request_state", "!=", "finished")
+            )
+
+            if len(provision_requests) < 1:
+                log.warning(' * No active provision requests at this time')
+                return None
+
+            log.info('-' * 50)
+            log.info(' Active provision requests'.center(50))
+            log.info('-' * 50)
+
+            for item in provision_requests:
+                log.info(' * ID: %s\tINSTANCE: %s\tSTATE: %s\tSTATUS: %s' %
+                         (item.id, item.options['vm_name'], item.request_state,
+                          item.status))
+            log.info('-' * 50)
+
+            return provision_requests
