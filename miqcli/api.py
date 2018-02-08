@@ -28,7 +28,7 @@ from manageiq_client.api import APIException, ManageIQClient
 
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
+from miqcli.constants import TOKENFILE, DEFAULT_CONFIG
 from miqcli.utils import log, get_collection_class
 
 __all__ = ['ClientAPI', 'Client']
@@ -57,7 +57,7 @@ class ClientAPI(object):
 
         # create miqcli folder if it doesn't exist
         try:
-            os.makedirs(os.path.dirname(AUTHDIR))
+            os.makedirs(os.path.dirname(TOKENFILE))
         except OSError as e:
             if e.errno != errno.EEXIST:
                 log.abort('Error creating user miqcli folder.')
@@ -142,11 +142,11 @@ class ClientAPI(object):
     @staticmethod
     def _set_auth_file(token):
         """
-        Save the token into AUTHDIR
+        Save the token into TOKENFILE
         :param token: given token
         """
         try:
-            with open(AUTHDIR, "w") as fp:
+            with open(TOKENFILE, "w") as fp:
                 fp.write(token)
         except OSError as e:
             log.abort('Error setting token file. %s' % e)
@@ -154,10 +154,10 @@ class ClientAPI(object):
     @staticmethod
     def _get_from_auth_file():
         """
-        Get the token from the auth file (AUTHDIR)
+        Get the token from the token file (TOKENFILE)
         """
         try:
-            with open(AUTHDIR, "r") as fp:
+            with open(TOKENFILE, "r") as fp:
                 token = fp.read().strip()
         except IOError as e:
             if e.errno != errno.ENOENT:
