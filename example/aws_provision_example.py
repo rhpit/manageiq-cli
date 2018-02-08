@@ -15,7 +15,7 @@
 #
 
 from miqcli import Client
-import ast
+
 import json
 from time import sleep
 
@@ -29,7 +29,7 @@ print(client)
 # Auto Placement or Specifying Placement (Network and Subnet)
 
 # Auto Placement Example Payload File
-#payload_file = "aws_provision_ex_auto_placement.json"
+# payload_file = "aws_provision_ex_auto_placement.json"
 
 # Not Auto Placement - Specify Placement and cloud_subnet
 payload_file = "aws_provision_ex_cloud_subnet.json"

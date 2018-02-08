@@ -14,6 +14,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from manageiq_client.api import APIException
+
 from miqcli.query import AdvancedQuery
 from miqcli.utils import log
 
@@ -197,8 +199,9 @@ class Provider(object):
         :return: Attribute
         :rtype:
         """
-        atts = self.get_entity(ent_id ,attribute).__getattr__(attribute)
+        atts = self.get_entity(ent_id, attribute).__getattr__(attribute)
         return atts
+
 
 class Flavors(Provider):
     """Provider flavor component."""
@@ -273,8 +276,8 @@ class Networks(Provider):
         """Constructor."""
         super(Networks, self).__init__(name, api)
         self.collection = self.__collection_name__
-        if network and network is not None :
-            self.type = self.network_type + '::CloudNetwork::' + network.title()
+        if network and network is not None:
+            self.type = self.network_type + '::CloudNetwork::' +\
+                network.title()
         else:
             self.type = self.network_type + '::CloudNetwork'
-

@@ -169,9 +169,8 @@ class Collections(object):
             # lookup security group resource to get the id
             if 'security_group' in input_data and input_data['security_group']:
                 sec_group = SecurityGroups(provider, self.api)
-                AWSP_PAYLOAD['vm_fields']['security_groups'] = sec_group.get_id(
-                    input_data['security_group']
-                )
+                AWSP_PAYLOAD['vm_fields']['security_groups'] = \
+                    sec_group.get_id(input_data['security_group'])
 
             # lookup key pair resource to get the id
             key_pair = KeyPair(provider, self.api)
@@ -197,13 +196,15 @@ class Collections(object):
                 subnet_id = None
                 if isinstance(out, list):
                     for att in out:
-                        if 'name' in att and att['name'] == input_data['subnet']:
+                        if 'name' in att and att['name'] == \
+                                input_data['subnet']:
                             subnet_id = att['id']
                 elif isinstance(out, dict):
-                    if out and 'name' in out and out['name'] == input_data['subnet']:
+                    if out and 'name' in out and out['name'] == \
+                            input_data['subnet']:
                         subnet_id = out['id']
 
-                if subnet_id == None:
+                if subnet_id is None:
                     log.abort("Can not obtain Cloud Subnet: {0} info, please "
                               "check its setting in the payload "
                               "is correct".format(missing_data))
