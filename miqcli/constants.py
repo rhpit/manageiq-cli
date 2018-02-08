@@ -75,8 +75,8 @@ REQUIRED_AWSP_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name",
 
 OPTIONAL_OSP_KEYS = ["network", "subnet", "key_pair", "security_group"]
 
-#: filesystem root for miqcli authentication store
-AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
+#: token file used to authenticate into ManageIQ
+TOKENFILE = os.path.join(os.path.expanduser('~'), ".miqcli/token")
 
 OSP_PAYLOAD = {
     "template_fields": {
