@@ -1,0 +1,10 @@
+{
+    "email": "<email_address>",
+    "image": "<image_name>",
+    "flavor": "<instance_type>",
+    "key_pair": "<key_pair>",
+    "vm_name": "<instance_name>",
+    "security_group": "<security_group>",
+    "network": "<virtual_private_cloud>",
+    "subnet": "<cloud_subnet>"
+}
