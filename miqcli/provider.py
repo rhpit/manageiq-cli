@@ -129,9 +129,25 @@ class Provider(object):
         """
         self._collection = getattr(self.api.client.collections, value)
 
+    def get_entity(self, id, attributes):
+        """Get the element based on the id given.
+        :param id: resource id
+        :type id: int
+        :param attributes: List of attributes
+        :type attributes: Comma seperated string
+        :return: element or none
+        :rtype: dict
+        """
+        try:
+            output = self.collection.__call__(id, attributes)
+        except (APIException, ValueError):
+            log.debug("Error getting element {0} for """
+                      "{1}".format(id, self.__collection_name__))
+
+        return output
+
     def get_resource(self, name):
         """Get the resource based on the name given.
-
         :param name: resource name
         :type name: str
         :return: resource or none
@@ -169,6 +185,18 @@ class Provider(object):
         """
         return self.get_resource(name)['id']
 
+    def get_attribute(self, ent_id, attribute):
+        """Get the attribute for the collection entity.
+
+        :param ent_id: Entity ID of Collection
+        :type ent_id: id
+        :param attribute: Attribute to retrieve
+        :type attribute: string
+        :return: Attribute
+        :rtype:
+        """
+        atts = self.get_entity(ent_id ,attribute).__getattr__(attribute)
+        return atts
 
 class Flavors(Provider):
     """Provider flavor component."""
@@ -278,11 +306,14 @@ class Networks(Provider):
 
     __collection_name__ = 'cloud_networks'
 
-    def __init__(self, name, api, network):
+    def __init__(self, name, api, network=None):
         """Constructor."""
         super(Networks, self).__init__(name, api)
         self.collection = self.__collection_name__
-        self.type = self.network_type + '::CloudNetwork::' + network.title()
+        if network and network is not None :
+            self.type = self.network_type + '::CloudNetwork::' + network.title()
+        else:
+            self.type = self.network_type + '::CloudNetwork'
 
     def get_resource(self, name):
         """Override the parent get_resource."""
