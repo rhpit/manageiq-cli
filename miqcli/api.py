@@ -148,7 +148,7 @@ class ClientAPI(object):
         try:
             with open(TOKENFILE, "w") as fp:
                 fp.write(token)
-        except OSError as e:
+        except (IOError, OSError) as e:
             log.abort('Error setting token file. %s' % e)
 
     @staticmethod
