@@ -24,6 +24,7 @@ from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OSP_KEYS, \
 from miqcli.decorators import client_api
 from miqcli.provider import Flavors, KeyPair, Networks, SecurityGroups,\
     Templates, Tenant
+from miqcli.query import BasicQuery
 from miqcli.utils import log, get_input_data
 
 
@@ -151,10 +152,10 @@ class Collections(object):
         :return: provision request object or list of provision request objects
         """
         status = OrderedDict()
+        query = BasicQuery(self.collection)
 
         if req_id:
-            provision_requests = self.api.basic_query(
-                self.collection, ("id", "=", req_id))
+            provision_requests = query(("id", "=", req_id))
 
             if len(provision_requests) < 1:
                 log.warning('Provision request id: %s not found!' % req_id)
@@ -175,9 +176,7 @@ class Collections(object):
 
             return req
         else:
-            provision_requests = self.api.basic_query(
-                self.collection, ("request_state", "!=", "finished")
-            )
+            provision_requests = query(("request_state", "!=", "finished"))
 
             if len(provision_requests) < 1:
                 log.warning(' * No active provision requests at this time')

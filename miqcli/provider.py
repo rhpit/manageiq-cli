@@ -14,9 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from manageiq_client.api import APIException
-from manageiq_client.filters import Q
-
+from miqcli.query import AdvancedQuery
 from miqcli.utils import log
 
 __all__ = ['Flavors', 'Templates', 'SecurityGroups', 'KeyPair', 'Tenant',
@@ -34,7 +32,7 @@ class Provider(object):
 
     # declare attributes to be defined at a later time..
     _type, _cloud_type, _network_type = '', '', ''
-    _collection = None
+    _collection, _query = None, None
 
     def __init__(self, name, api):
         """Constructor.
@@ -46,6 +44,7 @@ class Provider(object):
         """
         self._name = name
         self._api = api
+        self._query = AdvancedQuery(self._collection)
 
         # lets first save the provider types for cloud & network
         for res in self._api.client.collections.providers.all:
@@ -129,35 +128,37 @@ class Provider(object):
         """
         self._collection = getattr(self.api.client.collections, value)
 
+    @property
+    def query(self):
+        """Query property.
+
+        :return: query object
+        """
+        return self._query
+
     def get_resource(self, name):
         """Get the resource based on the name given.
 
         :param name: resource name
         :type name: str
-        :return: resource or none
-        :rtype: dict or None
+        :return: resources found from query
+        :rtype: list
         """
-        output = None
-        query = Q('name', '=', name) & Q('type', '=', self.type)
+        # advanced query
+        _query = [('name', '=', name), '&', ('type', '=', self.type)]
 
-        try:
-            output = self.collection.filter(query)
-        except (APIException, ValueError):
-            log.debug("Invalid query attempted {0} for """
-                      "{1}".format(query, self.__collection_name__))
+        # tell query which collection to run the query against
+        self.query.collection = self.collection
 
-        if len(output.resources) == 1:
-            resource = output.resources[0]
-        elif len(output.resources) > 1:
-            log.warning('Multiple resources match %s:%s.' % (
-                self.__collection_name__, name))
-            # RFE: handle multiple resources with same name/provider
-            # this should be very unlikely that we get multiples, for now we
-            # will return first match
-            resource = output.resources[0]
-        else:
-            resource = None
-        return resource
+        # run the query!
+        self.query(_query)
+
+        if len(self.query.resources) == 0:
+            log.abort('{0} {1} not found for provider {2}.'.format(
+                self.__class__.__name__, name, self.name
+            ))
+
+        return self.query.resources
 
     def get_id(self, name):
         """Get the ID for the resource name.
@@ -167,7 +168,8 @@ class Provider(object):
         :return: resource id
         :rtype: int
         """
-        return self.get_resource(name)['id']
+        self.get_resource(name)
+        return getattr(self.query, 'id')
 
 
 class Flavors(Provider):
@@ -181,14 +183,6 @@ class Flavors(Provider):
         self.collection = self.__collection_name__
         self.type = self.cloud_type + '::Flavor'
 
-    def get_resource(self, name):
-        """Override the parent get_resource."""
-        val = super(Flavors, self).get_resource(name)
-        if val is None:
-            log.abort('Flavor %s not found for provider %s.' %
-                      (name, self.name))
-        return val
-
 
 class Templates(Provider):
     """Provider images component."""
@@ -201,17 +195,10 @@ class Templates(Provider):
         self.collection = self.__collection_name__
         self.type = self.cloud_type + '::Template'
 
-    def get_resource(self, name):
-        """Override the parent get_resource."""
-        val = super(Templates, self).get_resource(name)
-        if val is None:
-            log.abort('Template %s not found for provider %s.' %
-                      (name, self.name))
-        return val
-
     def get_id(self, name):
         """Override the parent get_id."""
-        return self.get_resource(name)['guid']
+        self.get_resource(name)
+        return getattr(self.query, 'guid')
 
 
 class SecurityGroups(Provider):
@@ -225,14 +212,6 @@ class SecurityGroups(Provider):
         self.collection = self.__collection_name__
         self.type = self.network_type + '::SecurityGroup'
 
-    def get_resource(self, name):
-        """Override the parent get_resource."""
-        val = super(SecurityGroups, self).get_resource(name)
-        if val is None:
-            log.abort('Security group %s not found for provider %s.' %
-                      (name, self.name))
-        return val
-
 
 class KeyPair(Provider):
     """Provider key pair component."""
@@ -243,14 +222,6 @@ class KeyPair(Provider):
         super(KeyPair, self).__init__(name, api)
         self.collection = self.__collection_name__
         self.type = self.cloud_type + '::AuthKeyPair'
-
-    def get_resource(self, name):
-        """Override the parent get_resource."""
-        val = super(KeyPair, self).get_resource(name)
-        if val is None:
-            log.abort('Key pair %s not found for provider %s.' %
-                      (name, self.name))
-        return val
 
 
 class Tenant(Provider):
@@ -264,14 +235,6 @@ class Tenant(Provider):
         self.collection = self.__collection_name__
         self.type = self.cloud_type + '::CloudTenant'
 
-    def get_resource(self, name):
-        """Override the parent get_resource."""
-        val = super(Tenant, self).get_resource(name)
-        if val is None:
-            log.abort('Tenant %s not found for provider %s.' %
-                      (name, self.name))
-        return val
-
 
 class Networks(Provider):
     """Provider network component."""
@@ -283,11 +246,3 @@ class Networks(Provider):
         super(Networks, self).__init__(name, api)
         self.collection = self.__collection_name__
         self.type = self.network_type + '::CloudNetwork::' + network.title()
-
-    def get_resource(self, name):
-        """Override the parent get_resource."""
-        val = super(Networks, self).get_resource(name)
-        if val is None:
-            log.abort('Network %s not found for provider %s.' %
-                      (name, self.name))
-        return val
