@@ -69,8 +69,8 @@ REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
                      "flavor", "key_pair", "vm_name"]
 OPTIONAL_OSP_KEYS = ["fip_pool"]
 
-#: filesystem root for miqcli authentication store
-AUTHDIR = os.path.join(os.path.expanduser('~'), ".miqcli/auth")
+#: token file used to authenticate into ManageIQ
+TOKENFILE = os.path.join(os.path.expanduser('~'), ".miqcli/token")
 
 OSP_PAYLOAD = {
     "template_fields": {
