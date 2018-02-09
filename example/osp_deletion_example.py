@@ -69,7 +69,7 @@ if fip_id:
     print("Options from the automate request: {0}".format(result.options))
 
     # verify from the automate output that a floating ip was successfully
-    # created, and extract the id of the floating ip address
+    # detached and deleted.
     if "return" in result.options:
         return_data = result.options["return"]
         # verify the detaching was successful
