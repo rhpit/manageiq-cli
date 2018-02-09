@@ -64,7 +64,8 @@ else:
     raise SystemExit(1)
 return_dict = ast.literal_eval(return_data)
 if return_dict["status"] == "success":
-    fip, fip_id = return_dict["return"].items()[0]
+    fip = next(iter(return_dict['return']))
+    fip_id = return_dict['return'][fip]
     print("got floating ip: {0}: {1}".format(fip, fip_id))
 else:
     print("error occurred: {0}".format(
