@@ -95,3 +95,14 @@ while not done:
 req_state = result.request_state
 req_status = result.status
 print("State: {0} and Status: {1}".format(req_state, req_status))
+
+vm_name = payload_data["vm_name"]
+# 7. Report the floating ip address back to the user
+try:
+    client.collection = "instances"
+    instances = client.collection.query(inst_name=vm_name,
+                                        attr="floating_ip")
+    fip = instances["floating_ip"]["address"]
+    print("Floating ip for {0}: {1}".format(vm_name, fip))
+except SystemExit as e:
+    print('Floating ip not found for instance: {0}'.format(vm_name))

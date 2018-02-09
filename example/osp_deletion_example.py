@@ -18,7 +18,7 @@ from miqcli import Client
 from time import sleep
 
 # The input to deletion is the name of the vm
-INPUT = "vipatel-miq-test"
+INPUT = "<vm_name_to_delete>"
 
 # create a client object
 # pass in config, if empty {} means it will use the default credentials

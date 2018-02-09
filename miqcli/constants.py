@@ -82,13 +82,14 @@ OSP_PAYLOAD = {
     },
     "vm_fields": {
         "cloud_network": None,
+        # placement_auto is set to False so the user can set: cloud tenant,
+        # cloud network, security groups, and floating_ip_address
         "placement_auto": "false",
         "cloud_tenant": None,
         "security_groups": None,
         "instance_type": None,
         "guest_access_key_pair": None,
         "vm_name": None,
-        "delete_on_terminate": "true",
         "floating_ip_address": None
     }
 }
