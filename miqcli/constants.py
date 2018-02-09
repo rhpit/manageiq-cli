@@ -65,10 +65,16 @@ DEFAULT_CONFIG = {
 
 SUPPORTED_AUTOMATE_REQUESTS = ['generic', 'gen_floating_ip',
                                'release_floating_ip']
-SUPPORTED_PROVIDERS = ["OpenStack"]
+SUPPORTED_PROVIDERS = ["OpenStack", Amazon"]
 REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
                      "flavor", "key_pair", "vm_name"]
 OPTIONAL_OSP_KEYS = ["fip_pool"]
+
+REQUIRED_AWS_AUTO_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name"]
+REQUIRED_AWS_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name",
+                               "network", "subnet"]
+
+OPTIONAL_AWS_KEYS = ["network", "subnet", "key_pair", "security_group"]
 
 #: token file used to authenticate into ManageIQ
 TOKENFILE = os.path.join(os.path.expanduser('~'), ".miqcli/token")
@@ -106,6 +112,21 @@ OSP_FIP_PAYLOAD = {
     },
     "requester": {
         "auto_approve": "true"
+    }
+}
+
+AWS_PAYLOAD = {
+    "template_fields": {
+        "guid": None
+    },
+    "requester": {
+        "owner_email": None
+    },
+    "vm_fields": {
+        "placement_auto": "false",
+        "instance_type": None,
+        "vm_name": None,
+        "delete_on_terminate": "true",
     }
 }
 

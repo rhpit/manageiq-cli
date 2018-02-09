@@ -14,6 +14,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from manageiq_client.api import APIException
+
 from miqcli.query import AdvancedQuery
 from miqcli.utils import log
 
@@ -136,9 +138,25 @@ class Provider(object):
         """
         return self._query
 
+    def get_entity(self, ent_id, attributes):
+        """Get the element based on the id given.
+        :param ent_id: resource id
+        :type ent_id: int
+        :param attributes: List of attributes
+        :type attributes: Comma seperated string
+        :return: element or none
+        :rtype: dict
+        """
+        output = None
+        try:
+            output = self.collection.__call__(ent_id, attributes)
+        except APIException as e:
+            log.debug('Get entity failed: ID({0}): {1} error: {2}'.format(
+                self.__collection_name__, ent_id, e))
+        return output
+
     def get_resource(self, name):
         """Get the resource based on the name given.
-
         :param name: resource name
         :type name: str
         :return: resources found from query
@@ -162,7 +180,6 @@ class Provider(object):
 
     def get_id(self, name):
         """Get the ID for the resource name.
-
         :param name: resource name
         :type name: str
         :return: resource id
@@ -170,6 +187,30 @@ class Provider(object):
         """
         self.get_resource(name)
         return getattr(self.query, 'id')
+
+    def get_attribute(self, ent_id, attribute):
+        """Get the attribute for the collection entity.
+        Return should be checked for None by caller.
+        :param ent_id: Entity ID of Collection
+        :type ent_id: id
+        :param attribute: Attribute to retrieve
+        :type attribute: string
+        :return: Attribute
+        :rtype:
+        """
+
+        atts = None
+        try:
+            atts = self.get_entity(ent_id, attribute).__getattr__(attribute)
+        except AttributeError as e:
+            log.error('Get Attribute failed: Attribute: '
+                      "'{0}' ID({1}): {2} error: {3}".format(
+                          attribute, self.__collection_name__, ent_id, e))
+        except APIException as e:
+            log.abort('Unexpected Error in Get Attribute: Attribute: '
+                      "'{0}' ID({1}): {2} error: {3}".format(
+                          attribute, self.__collection_name__, ent_id, e))
+        return atts
 
 
 class Flavors(Provider):
@@ -241,8 +282,12 @@ class Networks(Provider):
 
     __collection_name__ = 'cloud_networks'
 
-    def __init__(self, name, api, network):
+    def __init__(self, name, api, network=None):
         """Constructor."""
         super(Networks, self).__init__(name, api)
         self.collection = self.__collection_name__
-        self.type = self.network_type + '::CloudNetwork::' + network.title()
+        if network and network is not None:
+            self.type = self.network_type + '::CloudNetwork::' +\
+                network.title()
+        else:
+            self.type = self.network_type + '::CloudNetwork'
