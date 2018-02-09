@@ -17,6 +17,7 @@
 import click
 from manageiq_client.api import APIException
 from miqcli.decorators import client_api
+from miqcli.query import BasicQuery
 from miqcli.utils import log
 
 
@@ -42,8 +43,9 @@ class Collections(object):
 
         # query based on instance name
         if inst_name:
-            instance = self.api.basic_query(self.collection,
-                                            ("name", "=", inst_name))
+            query = BasicQuery(self.collection)
+            instance = query(("name", "=", inst_name))
+
             if len(instance) < 1:
                 log.abort('Cannot find %s in %s' % (inst_name,
                                                     self.collection.name))
@@ -124,8 +126,8 @@ class Collections(object):
         :rtype: int
         """
         if inst_name:
-            instances = self.api.basic_query(
-                self.collection, ("name", "=", inst_name))
+            query = BasicQuery(self.collection)
+            instances = query(("name", "=", inst_name))
             if len(instances) < 1:
                 log.abort('Instance: %s not found!' % inst_name)
             elif len(instances) > 1:

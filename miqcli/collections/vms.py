@@ -17,6 +17,7 @@
 import click
 from manageiq_client.api import APIException
 from miqcli.decorators import client_api
+from miqcli.query import BasicQuery
 from miqcli.utils import log
 
 
@@ -128,8 +129,8 @@ class Collections(object):
         :rtype: int
         """
         if vm_name:
-            vms = self.api.basic_query(
-                self.collection, ("name", "=", vm_name))
+            query = BasicQuery(self.collection)
+            vms = query(("name", "=", vm_name))
             if len(vms) < 1:
                 log.warning('VM: %s not found!' % vm_name)
                 return None

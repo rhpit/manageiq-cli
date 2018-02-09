@@ -18,6 +18,7 @@ import click
 from collections import OrderedDict
 
 from miqcli.decorators import client_api
+from miqcli.query import BasicQuery
 from miqcli.utils import log
 
 
@@ -43,10 +44,10 @@ class Collections(object):
         :return: provision request object or list of provision request objects
         """
         status = OrderedDict()
-
+        query = BasicQuery(self.collection)
         if task_id:
-            tasklist = self.api.basic_query(
-                self.collection, ("id", "=", task_id))
+
+            tasklist = query(("id", "=", task_id))
 
             if len(tasklist) < 1:
                 log.warning('Provision request id: %s not found!' % task_id)
@@ -67,9 +68,7 @@ class Collections(object):
 
             return task
         else:
-            task_list = self.api.basic_query(
-                self.collection, ("state", "!=", "Finished")
-            )
+            task_list = query(("state", "!=", "Finished"))
 
             if len(task_list) < 1:
                 log.warning(' * No active tasks at this time')
