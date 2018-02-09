@@ -21,6 +21,7 @@ from manageiq_client.api import APIException
 from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS
 from miqcli.decorators import client_api
 from miqcli.provider import Networks, Tenant
+from miqcli.query import BasicQuery
 from miqcli.utils import log, get_input_data
 
 
@@ -126,10 +127,10 @@ class Collections(object):
             objects
         """
         status = OrderedDict()
+        query = BasicQuery(self.collection)
 
         if req_id:
-            automation_requests = self.api.basic_query(
-                self.collection, ("id", "=", req_id))
+            automation_requests = query(("id", "=", req_id))
 
             if len(automation_requests) < 1:
                 log.warning('Automation request id: %s not found!' % req_id)
@@ -149,8 +150,7 @@ class Collections(object):
 
             return req
         else:
-            automation_requests = self.api.basic_query(
-                self.collection, ("request_state", "!=", "finished"))
+            automation_requests = query(("request_state", "!=", "finished"))
 
             if len(automation_requests) < 1:
                 log.warning('No active automation requests at this time.')

@@ -17,7 +17,6 @@
 import os
 import urllib3
 import errno
-import inspect
 
 from click import Context
 from click.globals import push_context
@@ -26,11 +25,10 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from manageiq_client.api import APIException, ManageIQClient
-from manageiq_client.filters import Q
 
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import AUTHDIR, DEFAULT_CONFIG
+from miqcli.constants import TOKENFILE, DEFAULT_CONFIG
 from miqcli.utils import log, get_collection_class
 
 __all__ = ['ClientAPI', 'Client']
@@ -59,7 +57,7 @@ class ClientAPI(object):
 
         # create miqcli folder if it doesn't exist
         try:
-            os.makedirs(os.path.dirname(AUTHDIR))
+            os.makedirs(os.path.dirname(TOKENFILE))
         except OSError as e:
             if e.errno != errno.EEXIST:
                 log.abort('Error creating user miqcli folder.')
@@ -144,22 +142,22 @@ class ClientAPI(object):
     @staticmethod
     def _set_auth_file(token):
         """
-        Save the token into AUTHDIR
+        Save the token into TOKENFILE
         :param token: given token
         """
         try:
-            with open(AUTHDIR, "w") as fp:
+            with open(TOKENFILE, "w") as fp:
                 fp.write(token)
-        except OSError as e:
+        except (IOError, OSError) as e:
             log.abort('Error setting token file. %s' % e)
 
     @staticmethod
     def _get_from_auth_file():
         """
-        Get the token from the auth file (AUTHDIR)
+        Get the token from the token file (TOKENFILE)
         """
         try:
-            with open(AUTHDIR, "r") as fp:
+            with open(TOKENFILE, "r") as fp:
                 token = fp.read().strip()
         except IOError as e:
             if e.errno != errno.ENOENT:
@@ -229,158 +227,6 @@ class ClientAPI(object):
             log.abort('Error creating library pointer - {0}'.format(e.message))
         except Exception as e:
             log.abort('{0}'.format(e.message))
-
-    def get_name(self):
-        """
-        get the name of the collection module
-        :return: name of the collection
-        """
-        mod_stack = inspect.stack()[2]
-        module = inspect.getmodule(mod_stack[0])
-        return module.__name__.split(".")[-1]
-
-    def get_collection(self, collection_name=None):
-        """
-        get the collection object given the name
-        :param collection_name: name of the collection
-        :return: collection object
-        """
-        if collection_name:
-            try:
-                return getattr(self.client.collections, collection_name)
-            except AttributeError:
-                log.warning("Collection {0} does not exist.".format(
-                    collection_name)
-                )
-                return None
-        else:
-            name = self.get_name()
-            return getattr(self.client.collections, name)
-
-    def query_getattr(self, collection, query, attr):
-        """
-        perform a basic query, and return the object's attribute that
-        is passed in.
-
-        :param collection: the specific collection object
-        :param query: query (a single tuple)
-        :param attr: the attribute to get
-        :return: returns a list of attributes, [] if query returns nothing.
-        """
-        collect_list = self.basic_query(collection, query)
-        if len(collect_list) == 0:
-            return None
-        elif len(collect_list) == 1:
-            try:
-                return getattr(collect_list[0], attr)
-            except AttributeError as e:
-                log.warning(e)
-                return None
-        else:
-            attr_list = []
-            for collection in collect_list:
-                try:
-                    attr_list.append(getattr(collection, attr))
-                except AttributeError as e:
-                    log.warning(e)
-                    return None
-            return attr_list
-
-    def adv_query_getattr(self, collection, query_list, attr):
-        """
-        perform an advanced query, and return a list of each obj's attribute.
-
-        :param collection: the specific collection object
-        :param query_list: a list of tuple queries joined, and operators (&,|)
-        :param attr: the attribute to get
-        :return: returns a list of attributes, [] if query returns nothing.
-        """
-        attr_list = []
-        collect_list = self.advanced_query(collection, query_list)
-        if len(collect_list) == 0:
-            return collect_list
-        else:
-            for collection in collect_list:
-                try:
-                    attr_list.append(getattr(collection, attr))
-                except AttributeError as e:
-                    log.warning(e)
-                    return []
-            return attr_list
-
-    def basic_query(self, collection, query):
-        """
-        basic query of a collection object
-
-        Example of the input
-        vms, ("name","=","cbn_eap64openjdk17c6_pkcrx")
-
-        :param collection: the specific collection object
-        :param query: tuple of name, operand, value
-        :return: a list of collections from the query
-                 (Empty if none or invalid)
-        """
-        if not collection:
-            log.abort("Invalid collection passed to be queried")
-        try:
-            if (len(query) == 3):
-                return collection.filter(
-                    Q(query[0], query[1], query[2])
-                ).resources
-            else:
-                log.warning("Invalid query: {0}".format(query))
-                return([])
-        # ValueError caught for invalid operators used
-        except (APIException, ValueError) as e:
-            log.warning("Invalid Query attempted: {0}, Error: {1}".format(
-                query, e)
-            )
-            return ([])
-
-    def advanced_query(self, collection, query_list):
-        """
-        Advance query of a collection object, which just means it is
-        a chain of multiple queries with the & or | operands.
-
-        Example of the input:
-        "vms", [("name","=","cbn_eap64openjdk17c6_pkcrx"),
-        '|', ("id",">",9999934)]
-
-        :param collection: the specific collection object
-        :param query_list: list of (name, operand, value) tuples and operands
-        :return: a list of resources
-        """
-        if not collection:
-            log.abort("Invalid collection passed to be queried")
-        query = ""
-        if len(query_list) % 2 == 0:
-            # warning message, invalid query was attempted <query_dict>
-            log.warning("Invalid query attempted {0}".format(query_list))
-            return ([])
-        while (query_list):
-            query_tuple = query_list.pop(0)
-            # verify the querying tuple has 3 vals set (name, operator, value)
-            if (len(query_tuple) == 3):
-                query += str("Q('" + str(query_tuple[0]) + "', '" +
-                             str(query_tuple[1])) + "', '" + \
-                    str(query_tuple[2]) + "')"
-            else:
-                log.warning("Invalid query: {0}".format(query_tuple))
-                return([])
-            if query_list:
-                query += " {} ".format(query_list.pop(0))
-            else:
-                try:
-                    resources = collection.filter(
-                        eval(query)
-                    ).resources
-                except (APIException, ValueError, TypeError) as e:
-                    # most likely user passed an invalid attribute name
-                    error = "Invalid Query attempted: {0}, Error: " \
-                            "{1}".format(query, e)
-                    log.warning(error)
-                    return ([])
-                return resources
 
 
 class Client(object):
