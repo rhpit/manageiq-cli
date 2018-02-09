@@ -81,7 +81,7 @@ class Config(dict):
         except yaml.YAMLError as e:
             if self._verbose:
                 log.debug('Standard error: {0}'.format(e.sterror))
-                log.abort('Error in config {0}.'.format(_cfg_file))
+            log.abort('Error in config {0}.'.format(_cfg_file))
 
     def from_env(self, var):
         """Load configuration settings from environment variable.
