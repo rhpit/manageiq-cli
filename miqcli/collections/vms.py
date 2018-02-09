@@ -14,7 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import click
+from manageiq_client.api import APIException
 from miqcli.decorators import client_api
+from miqcli.utils import log
 
 
 class Collections(object):
@@ -115,10 +118,38 @@ class Collections(object):
         """Scan."""
         raise NotImplementedError
 
+    @click.argument('vm_name', metavar='VM_NAME', type=str, default='')
     @client_api
-    def delete(self):
-        """Delete."""
-        raise NotImplementedError
+    def delete(self, vm_name):
+        """Delete
+
+        :param vm_name: name of the vm
+        :return: id of a task that will delete the vm
+        :rtype: int
+        """
+        if vm_name:
+            vms = self.api.basic_query(
+                self.collection, ("name", "=", vm_name))
+            if len(vms) < 1:
+                log.warning('VM: %s not found!' % vm_name)
+                return None
+            elif len(vms) > 1:
+                # How do we handle deletion when there are multiple matches
+                # TODO implement a better solution
+                log.warning('Multiple vms with name: '
+                            '{0}'.format(vm_name))
+                return None
+            else:
+                try:
+                    result = vms[0].action.delete()
+                    log.info("Task to delete {0} created: {1}".format(
+                        vm_name, result["task_id"]))
+                    return result["task_id"]
+                except APIException as ex:
+                    log.abort('Unable to create a task: delete vm: '
+                              '{0}: {1}'.format(vm_name, ex))
+        else:
+            log.abort('Set an vm name to be deleted.')
 
     @client_api
     def assign_tags(self):

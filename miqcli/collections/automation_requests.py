@@ -78,6 +78,19 @@ class Collections(object):
                     tenant.get_id(input_data['tenant'])
 
             _payload = OSP_FIP_PAYLOAD
+        elif method == SUPPORTED_AUTOMATE_REQUESTS[2]:
+            # release the floating_ip
+            OSP_FIP_PAYLOAD["uri_parts"]["instance"] = "release_floating_ip"
+            if 'floating_ip' in input_data:
+                OSP_FIP_PAYLOAD['parameters']['floating_ip'] = \
+                    input_data["floating_ip"]
+            elif 'floating_ip_id' in input_data:
+                OSP_FIP_PAYLOAD['parameters']['floating_ip_id'] = \
+                    input_data["floating_ip_id"]
+            else:
+                log.abort('To release a floating ip, set floating_ip or '
+                          'floating_ip_id.')
+            _payload = OSP_FIP_PAYLOAD
 
         try:
             # BUG: #93
