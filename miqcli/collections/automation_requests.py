@@ -65,33 +65,35 @@ class Collections(object):
             _payload = input_data
         elif method == SUPPORTED_AUTOMATE_REQUESTS[1]:
             # set the floating ip if set by the user
+            _payload = OSP_FIP_PAYLOAD
             if 'fip_pool' in input_data:
                 # lookup cloud network resource to get the id
                 # TODO: need to have user set the provider
                 networks = Networks('OpenStack', self.api, 'public')
-                OSP_FIP_PAYLOAD['parameters']['cloud_network_id'] = \
+                _payload['parameters']['cloud_network_id'] = \
                     networks.get_id(input_data['fip_pool'])
 
                 # lookup cloud tenant
                 # TODO: need to have user set the provider
                 tenant = Tenant('OpenStack', self.api)
-                OSP_FIP_PAYLOAD['parameters']['cloud_tenant_id'] = \
+                _payload['parameters']['cloud_tenant_id'] = \
                     tenant.get_id(input_data['tenant'])
 
-            _payload = OSP_FIP_PAYLOAD
+
         elif method == SUPPORTED_AUTOMATE_REQUESTS[2]:
+            _payload = OSP_FIP_PAYLOAD
             # release the floating_ip
-            OSP_FIP_PAYLOAD["uri_parts"]["instance"] = "release_floating_ip"
+            _payload["uri_parts"]["instance"] = "release_floating_ip"
             if 'floating_ip' in input_data:
-                OSP_FIP_PAYLOAD['parameters']['floating_ip'] = \
+                _payload['parameters']['floating_ip'] = \
                     input_data["floating_ip"]
             elif 'floating_ip_id' in input_data:
-                OSP_FIP_PAYLOAD['parameters']['floating_ip_id'] = \
+                _payload['parameters']['floating_ip_id'] = \
                     input_data["floating_ip_id"]
             else:
                 log.abort('To release a floating ip, set floating_ip or '
                           'floating_ip_id.')
-            _payload = OSP_FIP_PAYLOAD
+
 
         try:
             # BUG: #93
