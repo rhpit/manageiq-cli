@@ -41,7 +41,7 @@ with open(payload_file) as f:
         print("Error loading json data: {0}".format(e))
 
 # 2. call the provision request to create this vm (cli call to
-#  provision_request create --provider AWS this will return an id
+#  provision_request create --provider Amazon this will return an id
 client.collection = 'provision_requests'
 req_id = client.collection.create('Amazon', str(payload_data), "")
 print("ID of the provision request: {0}".format(req_id))
@@ -50,7 +50,7 @@ print("ID of the provision request: {0}".format(req_id))
 #  to be finished, once finished, it will return information about the
 #  provisioned machine or display the error message
 done = False
-while(not done):
+while not done:
     result = client.collection.status(req_id)
     if result.request_state == "finished":
         done = True

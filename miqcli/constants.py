@@ -69,8 +69,8 @@ REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
                      "flavor", "key_pair", "vm_name"]
 OPTIONAL_OSP_KEYS = ["fip_pool"]
 
-REQUIRED_AWSP_AUTO_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name"]
-REQUIRED_AWSP_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name",
+REQUIRED_AWS_AUTO_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name"]
+REQUIRED_AWS_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name",
                                 "network", "subnet"]
 
 OPTIONAL_OSP_KEYS = ["network", "subnet", "key_pair", "security_group"]
@@ -113,7 +113,7 @@ OSP_FIP_PAYLOAD = {
     }
 }
 
-AWSP_PAYLOAD = {
+AWS_PAYLOAD = {
     "template_fields": {
         "guid": None
     },

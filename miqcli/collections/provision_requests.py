@@ -20,8 +20,8 @@ import click
 from collections import OrderedDict
 
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OSP_KEYS, \
-    OSP_PAYLOAD, REQUIRED_AWSP_AUTO_PLACEMENT_KEYS, AWSP_PAYLOAD, \
-    REQUIRED_AWSP_PLACEMENT_KEYS
+    OSP_PAYLOAD, REQUIRED_AWS_AUTO_PLACEMENT_KEYS, AWS_PAYLOAD, \
+    REQUIRED_AWS_PLACEMENT_KEYS
 from miqcli.decorators import client_api
 from miqcli.provider import Flavors, KeyPair, Networks, SecurityGroups,\
     Templates, Tenant
@@ -138,12 +138,12 @@ class Collections(object):
 
             # Set Required fields
             if 'auto_placement' in input_data and input_data['auto_placement']:
-                REQUIRED_AWSP_KEYS = REQUIRED_AWSP_AUTO_PLACEMENT_KEYS
+                REQUIRED_AWS_KEYS = REQUIRED_AWS_AUTO_PLACEMENT_KEYS
             else:
-                REQUIRED_AWSP_KEYS = REQUIRED_AWSP_PLACEMENT_KEYS
+                REQUIRED_AWS_KEYS = REQUIRED_AWS_PLACEMENT_KEYS
             # verify all the required keys are set
             missing_data = []
-            for key in REQUIRED_AWSP_KEYS:
+            for key in REQUIRED_AWS_KEYS:
                 if key not in input_data or input_data[key] is None:
                     missing_data.append(key)
             if missing_data:
@@ -152,35 +152,35 @@ class Collections(object):
 
             # Verified data is valid, update payload w/id lookups
             # set the email_address and vm name
-            AWSP_PAYLOAD["requester"]["owner_email"] = input_data["email"]
-            AWSP_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
+            AWS_PAYLOAD["requester"]["owner_email"] = input_data["email"]
+            AWS_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
             # lookup flavor resource to get the id
             flavors = Flavors(provider, self.api)
-            AWSP_PAYLOAD['vm_fields']['instance_type'] = flavors.get_id(
+            AWS_PAYLOAD['vm_fields']['instance_type'] = flavors.get_id(
                 input_data['flavor'])
 
             # lookup image resource to get the id
             templates = Templates(provider, self.api)
-            AWSP_PAYLOAD['template_fields']['guid'] = templates.get_id(
+            AWS_PAYLOAD['template_fields']['guid'] = templates.get_id(
                 input_data['image']
             )
 
             # lookup security group resource to get the id
             if 'security_group' in input_data and input_data['security_group']:
                 sec_group = SecurityGroups(provider, self.api)
-                AWSP_PAYLOAD['vm_fields']['security_groups'] = \
+                AWS_PAYLOAD['vm_fields']['security_groups'] = \
                     sec_group.get_id(input_data['security_group'])
 
             # lookup key pair resource to get the id
             key_pair = KeyPair(provider, self.api)
-            AWSP_PAYLOAD['vm_fields']['guest_access_key_pair'] = \
+            AWS_PAYLOAD['vm_fields']['guest_access_key_pair'] = \
                 key_pair.get_id(input_data['key_pair'])
 
             # lookup cloud network resource to get the id
             if 'network' in input_data and input_data['network']:
                 network = Networks(provider, self.api)
-                AWSP_PAYLOAD['vm_fields']['cloud_network'] = network.get_id(
+                AWS_PAYLOAD['vm_fields']['cloud_network'] = network.get_id(
                     input_data['network']
                 )
 
@@ -188,9 +188,8 @@ class Collections(object):
             # to get the id
             if 'subnet' in input_data and input_data['subnet']:
                 out = network.get_attribute(
-                    AWSP_PAYLOAD['vm_fields']['cloud_network'],
+                    AWS_PAYLOAD['vm_fields']['cloud_network'],
                     'cloud_subnets')
-                log.info("Attribute: {0}".format(out))
 
                 # Get id for supplied Subnet
                 subnet_id = None
@@ -205,15 +204,16 @@ class Collections(object):
                         subnet_id = out['id']
 
                 if subnet_id is None:
-                    log.abort("Can not obtain Cloud Subnet: {0} info, please "
-                              "check its setting in the payload "
-                              "is correct".format(missing_data))
+                    log.abort('Cannot obtain Cloud Subnet: {0} info, please '
+                              'check setting in the payload '
+                              'is correct'.format(input_data['subnet']))
 
-                AWSP_PAYLOAD['vm_fields']['cloud_subnet'] = subnet_id
+                log.info('Attribute: {0}'.format(out))
+                AWS_PAYLOAD['vm_fields']['cloud_subnet'] = subnet_id
 
             log.debug("Payload for the provisioning request: {0}".format(
-                pformat(AWSP_PAYLOAD)))
-            outcome = self.action(AWSP_PAYLOAD)
+                pformat(AWS_PAYLOAD)))
+            outcome = self.action(AWS_PAYLOAD)
             # BUG: #93
             req_id = outcome[0].id
             log.info("Provisioning request created: {0}".format(req_id))

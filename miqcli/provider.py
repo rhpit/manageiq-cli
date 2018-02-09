@@ -138,21 +138,21 @@ class Provider(object):
         """
         return self._query
 
-    def get_entity(self, id, attributes):
+    def get_entity(self, ent_id, attributes):
         """Get the element based on the id given.
-        :param id: resource id
-        :type id: int
+        :param ent_id: resource id
+        :type ent_id: int
         :param attributes: List of attributes
         :type attributes: Comma seperated string
         :return: element or none
         :rtype: dict
         """
+        output = None
         try:
-            output = self.collection.__call__(id, attributes)
-        except (APIException, ValueError):
-            log.debug("Error getting element {0} for """
-                      "{1}".format(id, self.__collection_name__))
-
+            output = self.collection.__call__(ent_id, attributes)
+        except APIException as e:
+            log.debug('Get entity failed: ID({0}): {1} error: {2}'.format(
+                self.__collection_name__, ent_id, e))
         return output
 
     def get_resource(self, name):
@@ -180,7 +180,6 @@ class Provider(object):
 
     def get_id(self, name):
         """Get the ID for the resource name.
-
         :param name: resource name
         :type name: str
         :return: resource id
@@ -191,7 +190,7 @@ class Provider(object):
 
     def get_attribute(self, ent_id, attribute):
         """Get the attribute for the collection entity.
-
+        Return should be checked for None by caller.
         :param ent_id: Entity ID of Collection
         :type ent_id: id
         :param attribute: Attribute to retrieve
@@ -199,7 +198,18 @@ class Provider(object):
         :return: Attribute
         :rtype:
         """
-        atts = self.get_entity(ent_id, attribute).__getattr__(attribute)
+
+        atts = None
+        try:
+            atts = self.get_entity(ent_id, attribute).__getattr__(attribute)
+        except AttributeError as e:
+            log.error('Get Attribute failed: Attribute: '
+                      "'{0}' ID({1}): {2} error: {3}".format(
+                          attribute, self.__collection_name__, ent_id, e))
+        except APIException as e:
+            log.abort('Unexpected Error in Get Attribute: Attribute: '
+                      "'{0}' ID({1}): {2} error: {3}".format(
+                          attribute, self.__collection_name__, ent_id, e))
         return atts
 
 
