@@ -65,7 +65,7 @@ DEFAULT_CONFIG = {
 
 SUPPORTED_AUTOMATE_REQUESTS = ['generic', 'gen_floating_ip',
                                'release_floating_ip']
-SUPPORTED_PROVIDERS = ["OpenStack", Amazon"]
+SUPPORTED_PROVIDERS = ["OpenStack", "Amazon"]
 REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
                      "flavor", "key_pair", "vm_name"]
 OPTIONAL_OSP_KEYS = ["fip_pool"]
