@@ -14,10 +14,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from miqcli.collections import CollectionsMixin
 from miqcli.decorators import client_api
 
 
-class Collections(object):
+class Collections(CollectionsMixin):
     """Load balancers collections."""
 
     @client_api
