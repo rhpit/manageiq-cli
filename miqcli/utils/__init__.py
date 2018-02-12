@@ -73,14 +73,18 @@ class Config(dict):
         try:
             with open(_cfg_file, mode='rb') as fp:
                 config_data = yaml.load(fp)
-                if config_data is not None:
+
+                if isinstance(config_data, str):
+                    log.abort('Config file {0} formatted incorrectly.'.format(
+                        _cfg_file))
+                elif config_data is None:
+                    log.warning('Config file {0} is empty.'.format(_cfg_file))
+                else:
                     for key, value in config_data.items():
                         self[key] = value
-                else:
-                    log.warning('Config file {0} is empty.'.format(_cfg_file))
         except yaml.YAMLError as e:
             if self._verbose:
-                log.debug('Standard error: {0}'.format(e.sterror))
+                log.debug('Standard error: {0}'.format(e))
             log.abort('Error in config {0}.'.format(_cfg_file))
 
     def from_env(self, var):
