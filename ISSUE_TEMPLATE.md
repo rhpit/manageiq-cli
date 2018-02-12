@@ -45,14 +45,14 @@ until there is enough information.
 
 ### Summary
 
-Describe you would like to acheive
+Describe what you would like to achieve
 
 ### Importance
 
-Tell us why do you think this change is important
+Tell us why you believe this feature request is important
 
 ### Use Cases
 
-Describe few use cases (this helps when creating tests)
+Describe a few use cases (this helps when creating tests)
 
 ---------------------
