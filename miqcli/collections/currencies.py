@@ -14,6 +14,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from miqcli.collections import CollectionsMixin
 
-class Collections(object):
+
+class Collections(CollectionsMixin):
     """Currencies collections."""

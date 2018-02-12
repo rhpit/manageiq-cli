@@ -18,6 +18,7 @@ import click
 from collections import OrderedDict
 from manageiq_client.api import APIException
 
+from miqcli.collections import CollectionsMixin
 from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS, AR
 from miqcli.decorators import client_api
 from miqcli.provider import Networks, Tenant
@@ -25,7 +26,7 @@ from miqcli.query import BasicQuery
 from miqcli.utils import log, get_input_data
 
 
-class Collections(object):
+class Collections(CollectionsMixin):
     """Automation requests collections."""
 
     @click.option('--method', type=click.Choice(SUPPORTED_AUTOMATE_REQUESTS),
@@ -94,11 +95,9 @@ class Collections(object):
                           'floating_ip_id.')
 
         try:
-            # BUG: #93
-            outcome = self.action(_payload)
-            req_id = outcome[0].id
-            log.info('Automation request created: %s.' % req_id)
-            return req_id
+            self.req_id = self.action(_payload)
+            log.info('Automation request created: %s.' % self.req_id)
+            return self.req_id
         except APIException as ex:
             log.abort('Unable to create automation request: %s' % ex)
 

@@ -17,12 +17,13 @@
 import click
 from collections import OrderedDict
 
+from miqcli.collections import CollectionsMixin
 from miqcli.decorators import client_api
 from miqcli.query import BasicQuery
 from miqcli.utils import log
 
 
-class Collections(object):
+class Collections(CollectionsMixin):
     """Tasks collections."""
 
     @client_api

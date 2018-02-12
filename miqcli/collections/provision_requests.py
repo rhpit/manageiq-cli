@@ -19,6 +19,7 @@ from pprint import pformat
 import click
 from collections import OrderedDict
 
+from miqcli.collections import CollectionsMixin
 from miqcli.constants import SUPPORTED_PROVIDERS, REQUIRED_OSP_KEYS, \
     OSP_PAYLOAD, REQUIRED_AWS_AUTO_PLACEMENT_KEYS, AWS_PAYLOAD, \
     REQUIRED_AWS_PLACEMENT_KEYS
@@ -29,7 +30,7 @@ from miqcli.query import BasicQuery
 from miqcli.utils import log, get_input_data
 
 
-class Collections(object):
+class Collections(CollectionsMixin):
     """Provision requests collections."""
 
     @client_api
@@ -123,11 +124,9 @@ class Collections(object):
 
             log.debug("Payload for the provisioning request: {0}".format(
                 pformat(OSP_PAYLOAD)))
-            outcome = self.action(OSP_PAYLOAD)
-            # BUG: #93
-            req_id = outcome[0].id
-            log.info("Provisioning request created: {0}".format(req_id))
-            return req_id
+            self.req_id = self.action(OSP_PAYLOAD)
+            log.info("Provisioning request created: {0}".format(self.req_id))
+            return self.req_id
 
         # RFE: make generic as possible, remove conditional per provider
         if provider == "Amazon":
@@ -213,11 +212,9 @@ class Collections(object):
 
             log.debug("Payload for the provisioning request: {0}".format(
                 pformat(AWS_PAYLOAD)))
-            outcome = self.action(AWS_PAYLOAD)
-            # BUG: #93
-            req_id = outcome[0].id
-            log.info("Provisioning request created: {0}".format(req_id))
-            return req_id
+            self.req_id = self.action(AWS_PAYLOAD)
+            log.info("Provisioning request created: {0}".format(self.req_id))
+            return self.req_id
 
     @client_api
     def deny(self):

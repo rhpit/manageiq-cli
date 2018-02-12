@@ -16,12 +16,13 @@
 
 import click
 from manageiq_client.api import APIException
+from miqcli.collections import CollectionsMixin
 from miqcli.decorators import client_api
 from miqcli.query import BasicQuery
 from miqcli.utils import log
 
 
-class Collections(object):
+class Collections(CollectionsMixin):
     """Virtual machines collections."""
 
     @client_api
