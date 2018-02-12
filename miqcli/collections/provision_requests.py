@@ -212,11 +212,9 @@ class Collections(CollectionsMixin):
 
             log.debug("Payload for the provisioning request: {0}".format(
                 pformat(AWS_PAYLOAD)))
-            outcome = self.action(AWS_PAYLOAD)
-            # BUG: #93
-            req_id = outcome[0].id
-            log.info("Provisioning request created: {0}".format(req_id))
-            return req_id
+            self.req_id = self.action(AWS_PAYLOAD)
+            log.info("Provisioning request created: {0}".format(self.req_id))
+            return self.req_id
 
     @client_api
     def deny(self):
