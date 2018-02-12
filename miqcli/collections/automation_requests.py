@@ -19,7 +19,7 @@ from collections import OrderedDict
 from manageiq_client.api import APIException
 
 from miqcli.collections import CollectionsMixin
-from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS
+from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS, AR
 from miqcli.decorators import client_api
 from miqcli.provider import Networks, Tenant
 from miqcli.query import BasicQuery
@@ -61,25 +61,38 @@ class Collections(CollectionsMixin):
         input_data = get_input_data(payload, payload_file)
 
         # RFE: make generic as possible, remove conditional if possible
-        if method == SUPPORTED_AUTOMATE_REQUESTS[0]:
+        if method == AR.GENERIC:
             # generic request, default behavior passthrough payload data
             _payload = input_data
-        elif method == SUPPORTED_AUTOMATE_REQUESTS[1]:
+        elif method == AR.GEN_FIP:
             # set the floating ip if set by the user
+            _payload = OSP_FIP_PAYLOAD
             if 'fip_pool' in input_data:
                 # lookup cloud network resource to get the id
                 # TODO: need to have user set the provider
                 networks = Networks('OpenStack', self.api, 'public')
-                OSP_FIP_PAYLOAD['parameters']['cloud_network_id'] = \
+                _payload['parameters']['cloud_network_id'] = \
                     networks.get_id(input_data['fip_pool'])
 
                 # lookup cloud tenant
                 # TODO: need to have user set the provider
                 tenant = Tenant('OpenStack', self.api)
-                OSP_FIP_PAYLOAD['parameters']['cloud_tenant_id'] = \
+                _payload['parameters']['cloud_tenant_id'] = \
                     tenant.get_id(input_data['tenant'])
 
+        elif method == AR.RELEASE_FIP:
             _payload = OSP_FIP_PAYLOAD
+            # release the floating_ip
+            _payload["uri_parts"]["instance"] = "release_floating_ip"
+            if 'floating_ip' in input_data:
+                _payload['parameters']['floating_ip'] = \
+                    input_data["floating_ip"]
+            elif 'floating_ip_id' in input_data:
+                _payload['parameters']['floating_ip_id'] = \
+                    input_data["floating_ip_id"]
+            else:
+                log.abort('To release a floating ip, set floating_ip or '
+                          'floating_ip_id.')
 
         try:
             self.req_id = self.action(_payload)
