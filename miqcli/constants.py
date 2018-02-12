@@ -63,8 +63,20 @@ DEFAULT_CONFIG = {
     'enable_ssl_verify': False
 }
 
-SUPPORTED_AUTOMATE_REQUESTS = ['generic', 'gen_floating_ip',
-                               'release_floating_ip']
+
+#: automation requests options
+class AR:
+    GENERIC = 'generic'
+    GEN_FIP = 'gen_floating_ip'
+    RELEASE_FIP = 'release_floating_ip'
+
+
+all_ar_requests = []
+for name in vars(AR):
+    if not name.startswith('_'):
+        all_ar_requests.append(name)
+
+SUPPORTED_AUTOMATE_REQUESTS = all_ar_requests
 SUPPORTED_PROVIDERS = ["OpenStack", "Amazon"]
 REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
                      "flavor", "key_pair", "vm_name"]

@@ -18,7 +18,7 @@ import click
 from collections import OrderedDict
 from manageiq_client.api import APIException
 
-from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS
+from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS, AR
 from miqcli.decorators import client_api
 from miqcli.provider import Networks, Tenant
 from miqcli.query import BasicQuery
@@ -60,10 +60,10 @@ class Collections(object):
         input_data = get_input_data(payload, payload_file)
 
         # RFE: make generic as possible, remove conditional if possible
-        if method == SUPPORTED_AUTOMATE_REQUESTS[0]:
+        if method == AR.GENERIC:
             # generic request, default behavior passthrough payload data
             _payload = input_data
-        elif method == SUPPORTED_AUTOMATE_REQUESTS[1]:
+        elif method == AR.GEN_FIP:
             # set the floating ip if set by the user
             _payload = OSP_FIP_PAYLOAD
             if 'fip_pool' in input_data:
@@ -79,8 +79,7 @@ class Collections(object):
                 _payload['parameters']['cloud_tenant_id'] = \
                     tenant.get_id(input_data['tenant'])
 
-
-        elif method == SUPPORTED_AUTOMATE_REQUESTS[2]:
+        elif method == AR.RELEASE_FIP:
             _payload = OSP_FIP_PAYLOAD
             # release the floating_ip
             _payload["uri_parts"]["instance"] = "release_floating_ip"
@@ -93,7 +92,6 @@ class Collections(object):
             else:
                 log.abort('To release a floating ip, set floating_ip or '
                           'floating_ip_id.')
-
 
         try:
             # BUG: #93
