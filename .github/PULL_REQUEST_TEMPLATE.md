@@ -30,4 +30,4 @@ Closes #
 
 **Notes on body:**
 
-* be descriptive about why this change is useful and how it is an improvement -- the more information the bette.
+* be descriptive about why this change is useful and how it is an improvement -- the more information the better.
