@@ -30,5 +30,4 @@ Closes #
 
 **Notes on body:**
 
-* do not save words in the body. The more information the better to understand
-  what you are trying to achieve and how.
+* be descriptive about why this change is useful and how it is an improvement -- the more information the bette.
