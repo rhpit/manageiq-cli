@@ -1,0 +1,5 @@
+---
+  url: https://somewhere:8443
+  username: administrator
+  password: p955w04d
+  enable_ssl_verify: False
