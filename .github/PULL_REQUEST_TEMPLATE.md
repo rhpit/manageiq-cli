@@ -1,5 +1,5 @@
 (Thanks for sending a pull request! Please make sure you read the contribution
-guidelines [CONTRIBUTING.rst](CONTRIBUTING.rst), then fill out a PR like the
+guidelines [CONTRIBUTING.rst](../CONTRIBUTING.rst), then fill out a PR like the
 template below)
 
 **IMPORTANT:** before pushing the PR you have to run tox for py27, py36 and pep8
