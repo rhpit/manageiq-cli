@@ -43,9 +43,9 @@ class TestUtils(TestCase):
     """Test utils to load config from yaml file"""
     myconfig = Config()
     myconfig.from_yml('tests/assets/', 'config')
-    assert_equal(myconfig.has_key('url'), True)
-    assert_equal(myconfig.has_key('username'), True)
-    assert_equal(myconfig.has_key('password'), True)
+    assert_equal('url' in myconfig, True)
+    assert_equal('username' in myconfig, True)
+    assert_equal('password' in myconfig, True)
     assert_equal(myconfig['url'], 'https://somewhere:8443')
 
   def test_utils_load_from_yaml_empty_file(self):
@@ -65,7 +65,7 @@ class TestUtils(TestCase):
     """Test utils to load config from non-existent yaml file"""
     myconfig = Config()
     myconfig.from_yml('tests/assets/', 'nonexistent_file')
-    assert_equal(myconfig.has_key('url'), False)
+    assert_equal('url' in myconfig, False)
 
   def test_utils_load_from_yaml_with_syntax_error_verboseone(self):
     """Test utils to load config from a yaml with syntax error w/ verbose on"""

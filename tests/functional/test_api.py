@@ -61,13 +61,7 @@ class TestApi(TestCase):
         assert_equal(
             self.cli_emptysettings._client, self.cli_emptysettings.client)
 
-    def test_clientapi_empty_settings_token_property(self):
-        """Test api.ClientAPI.token property without parameters"""
-        assert_is_none(self.cli_emptysettings._client)
-        assert_equal(self.cli_emptysettings._token, None)
-        assert_equal(self.cli_emptysettings.token, None)
-
-    def test_clientapi_token_property(self):
+    def test_clientapi_token_property_empty_settings(self):
         """Test api.ClientAPI.token property without parameters"""
         assert_is_none(self.cli_emptysettings._client)
         assert_equal(self.cli_emptysettings._token, None)
