@@ -99,6 +99,9 @@ class Config(dict):
         except KeyError:
             if self._verbose:
                 log.warning('Config environment variable is undefined.')
+        except SyntaxError:
+            log.abort('The syntax of the environment variable content '
+                      'is not valid. Check its content.')
 
 
 def get_class_methods(cls):
