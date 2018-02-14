@@ -37,7 +37,7 @@ fip_id = None
 client.collection = "instances"
 try:
     instances = client.collection.query(inst_name=INPUT,
-                                        attr="floating_ip")
+                                        attr=('floating_ip',))
     fip_id = instances["floating_ip"]["id"]
 except SystemExit as e:
     print('No associated floating ips for instance: {0}, will continue to'

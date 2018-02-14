@@ -26,7 +26,7 @@ class Collections(CollectionsMixin):
     """Instances collections."""
 
     @click.option('--attr', type=str, default='',
-                  help='attribute of an instance(s)')
+                  help='attribute of an instance(s)', multiple=True)
     @click.argument('inst_name', metavar='INST_NAME', type=str, default='')
     @client_api
     def query(self, inst_name, attr):
@@ -51,25 +51,28 @@ class Collections(CollectionsMixin):
                 log.abort('Cannot find %s in %s' % (inst_name,
                                                     self.collection.name))
             if len(instance) > 1:
-                log.abort('Multiple matching instances for name: .')
+                log.abort('Multiple matching instances for name: %s.' %
+                          (inst_name))
             res = instance[0]
 
             log.info('-' * 50)
             log.info('Instance Info'.center(50))
             log.info('-' * 50)
 
-            # user passed an attribute for the instance
+            # user passed an attribute(s) for the instance
             if attr:
                 try:
-                    attr_instance = self.collection(res["id"], attr)
-                    attribute = attr_instance[attr]
+                    attr_instance = self.collection(res["id"], list(attr))
+                    # attribute = attr_instance[attr]
                 except AttributeError:
                     log.abort('Attribute %s not found in Instance %s' %
                               (attr, attr_instance['name']))
 
                 log.info(' * ID: %s' % attr_instance["id"])
                 log.info(' * NAME: %s' % attr_instance['name'])
-                log.info(' * %s: %s' % (attr.upper(), attribute))
+                for attribute in attr:
+                    log.info(' * %s: %s' % (attribute.upper(),
+                                            attr_instance[attribute]))
                 log.info('-' * 50)
                 return attr_instance
             else:
@@ -84,19 +87,22 @@ class Collections(CollectionsMixin):
             # return instances that have the attribute passed set
             if attr:
                 found = False
-                test = self.collection.all_include_attributes(attr)
+                attr_list = self.collection.all_include_attributes(list(attr))
                 itemlist = []
-                for item in test:
-                    if attr in item._data and item[attr]:
+                log.info('-' * 50)
+                log.info('Instances with {0}:'.format(
+                    ', '.join(list(attr))).center(50))
+                log.info('-' * 50)
+                for item in attr_list:
+                    if set(attr) < set(item._data):
                         itemlist.append(item)
                         found = True
-                        log.info('-' * 50)
-                        log.info('Instances with %s:'.format(attr).center(50))
-                        log.info('-' * 50)
-                        log.info(' * ID: %s\tNAME: %s\t %s: %s' %
-                                 (item["id"], item['name'],
-                                  attr.upper(), item[attr]))
-                        log.info('-' * 50)
+                        attribute_data = ' * ID: %s\tNAME: %s' % (item["id"],
+                                                                  item['name'])
+                        for attribute in attr:
+                            attribute_data += '\t%s: %s' % (attribute.upper(),
+                                                            item[attribute])
+                        log.info(attribute_data)
                 if not found:
                     log.info('No matches for attr: %s in %s' %
                              (attr, self.collection.name))
