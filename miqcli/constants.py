@@ -78,9 +78,9 @@ for name in vars(AR):
 
 SUPPORTED_AUTOMATE_REQUESTS = all_ar_requests
 SUPPORTED_PROVIDERS = ["OpenStack", "Amazon"]
-REQUIRED_OSP_KEYS = ["email", "tenant", "image", "security_group", "network",
-                     "flavor", "key_pair", "vm_name"]
-OPTIONAL_OSP_KEYS = ["fip_pool"]
+REQUIRED_OSP_KEYS = ["email", "tenant", "image", "network",
+                     "flavor", "vm_name"]
+OPTIONAL_OSP_KEYS = ["fip_pool", "security_group", "key_pair"]
 
 REQUIRED_AWS_AUTO_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name"]
 REQUIRED_AWS_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name",
