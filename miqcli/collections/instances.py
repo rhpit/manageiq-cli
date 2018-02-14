@@ -38,7 +38,7 @@ class Collections(CollectionsMixin):
         :param inst_name: name of the instance
         :type inst_name: str
         :param attr: attribute
-        :type attr: str
+        :type attr: tuple
         :return: instance object or list of instance objects
         """
 
@@ -126,6 +126,8 @@ class Collections(CollectionsMixin):
     @client_api
     def terminate(self, inst_name):
         """Terminate instance.
+
+        ::
 
         :param inst_name: name of the instance
         :type inst_name: str
