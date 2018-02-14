@@ -123,9 +123,11 @@ class Collections(CollectionsMixin):
     @click.argument('vm_name', metavar='VM_NAME', type=str, default='')
     @client_api
     def delete(self, vm_name):
-        """Delete
+        """Delete.
 
+        ::
         :param vm_name: name of the vm
+        :type vm_name: str
         :return: id of a task that will delete the vm
         :rtype: int
         """
