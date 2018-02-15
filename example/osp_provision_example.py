@@ -98,10 +98,13 @@ print("State: {0} and Status: {1}".format(req_state, req_status))
 
 vm_name = payload_data["vm_name"]
 # 7. Report the floating ip address back to the user
+# need an extra sleep to make sure floating ip is added to
+# the instance after provisioning
+sleep(10)
 try:
     client.collection = "instances"
     instances = client.collection.query(inst_name=vm_name,
-                                        attr="floating_ip")
+                                        attr=("floating_ip",))
     fip = instances["floating_ip"]["address"]
     print("Floating ip for {0}: {1}".format(vm_name, fip))
 except SystemExit as e:
