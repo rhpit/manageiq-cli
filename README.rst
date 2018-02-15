@@ -2,7 +2,7 @@
 A ManageIQ Command-Line Client
 ==============================
 
-|docs-badge| |build-badge|
+|docs-badge| |build-badge| |coverage-badge|
 
 Documentation
 -------------
@@ -22,3 +22,8 @@ The latest documentation is available on
     :alt: Build Status
     :scale: 100%
     :target: https://travis-ci.org/rhpit/manageiq-cli
+
+.. |coverage-badge| image:: https://codecov.io/gh/rhpit/manageiq-cli/branch/master/graph/badge.svg
+    :alt: Code Coverage Status
+    :scale: 100%
+    :target: https://codecov.io/gh/rhpit/manageiq-cli
