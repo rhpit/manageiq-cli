@@ -74,10 +74,11 @@ def check_docker_image_exist(name, tag=None):
     global client
     repotag = build_docker_image_id(name, tag=tag)
     for img in client.images.list():
-        if img.attrs.has_key('RepoTags') and repotag \
-                in img.attrs['RepoTags']:
-            print("Image '%s' found." % repotag)
-            return True
+        if img.attrs.has_key('RepoTags') and \
+            img.attrs['RepoTags'] is not None:
+            if repotag in img.attrs['RepoTags']:
+                print("Image '%s' found." % repotag)
+                return True
     return False
 
 
@@ -136,13 +137,26 @@ def stop(c_name):
             break
 
     if c_instance:
+        # first stop container
         try:
             print('Stopping container %s...' % c_instance.name)
-            c_instance.stop()
-            c_instance.remove()
-            print('Container stopped and deleted.')
+            c_instance.stop(timeout=60)
         except Exception as e:
             print('Error stopping container \'%s\'.' % c_name)
+            print(e)
+            # yes, to avoid timeout errors we ignore.
+            pass
+
+        # sometimes the stop func throws a UnixHTTPConnectionPool timeout
+        # error. In this case we force the remove of the container, since
+        # we already use it and we don't care about its volume of if it is
+        # running
+        try:
+            print('Removing container %s...' % c_instance.name)
+            c_instance.remove(v=True, force=True)
+            print('Container deleted.')
+        except Exception as e:
+            print('Error removing container \'%s\'.' % c_name)
             print(e.message)
             exit(1)
     else:

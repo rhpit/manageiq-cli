@@ -73,6 +73,7 @@ if "fip_pool" in payload_data and payload_data["fip_pool"]:
     else:
         print("error occurred: {0}".format(
             return_dict["return"]))
+        raise SystemExit(1)
 
     # 4. the script will update the json data (in memory) w/ the floating_ip_id
     payload_data["floating_ip_id"] = fip_id
@@ -108,12 +109,15 @@ if result.status == "Error":
 
 # 7. Report the floating ip address back to the user if there are no errors
 if result.status != "Error":
+    # need an extra sleep to make sure floating ip is added to
+    # the instance after provisioning
+    sleep(10)
     vm_name = payload_data["vm_name"]
 
     try:
         client.collection = "instances"
         instances = client.collection.query(inst_name=vm_name,
-                                            attr="floating_ip")
+                                            attr=("floating_ip",))
         fip = instances["floating_ip"]["address"]
         print("Floating ip for {0}: {1}".format(vm_name, fip))
     except SystemExit as e:

@@ -9,7 +9,10 @@ matrix:
     - python: 3.6
       env: TOXENV=py36,pep8,docs
 install:
+  - pip install codecov
   - pip install tox
   - pip install -r test-requirements.txt
 script:
   - tox
+after_success:
+  - codecov
