@@ -19,7 +19,6 @@ import ast
 import json
 from time import sleep
 
-
 # create a client object
 # pass in config, if empty {} means it will use the default credentials
 config = {
