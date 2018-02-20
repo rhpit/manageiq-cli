@@ -99,16 +99,18 @@ class Collections(CollectionsMixin):
                 input_data['image']
             )
 
-            # lookup security group resource to get the id
-            sec_group = SecurityGroups(provider, self.api)
-            OSP_PAYLOAD['vm_fields']['security_groups'] = sec_group.get_id(
-                input_data['security_group']
-            )
+            if 'security_group' in input_data and input_data['security_group']:
+                # lookup security group resource to get the id
+                sec_group = SecurityGroups(provider, self.api)
+                OSP_PAYLOAD['vm_fields']['security_groups'] = sec_group.get_id(
+                    input_data['security_group']
+                )
 
-            # lookup key pair resource to get the id
-            key_pair = KeyPair(provider, self.api)
-            OSP_PAYLOAD['vm_fields']['guest_access_key_pair'] = \
-                key_pair.get_id(input_data['key_pair'])
+            if 'key_pair' in input_data and input_data["key_pair"]:
+                # lookup key pair resource to get the id
+                key_pair = KeyPair(provider, self.api)
+                OSP_PAYLOAD['vm_fields']['guest_access_key_pair'] = \
+                    key_pair.get_id(input_data['key_pair'])
 
             # lookup cloud network resource to get the id
             network = Networks(provider, self.api, 'private')

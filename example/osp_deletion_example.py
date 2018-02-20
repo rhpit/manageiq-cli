@@ -56,14 +56,26 @@ if fip_id:
     print(req_id)
 
     # 3. the script will keep querying automate_request for the status to be
-    #  finished, once finished, it will query for the floating ip id. If there
-    #  was an error, the script will display the error message and exit.
+    #  active, once active, it will query the spawned request task.
     done = False
     while not done:
         result = client.collection.status(req_id)
-        if result.request_state == "finished":
+        if result.request_state == "active":
             done = True
         sleep(5)
+
+    # Query the request task
+    client.collection = "request_tasks"
+    done = False
+    while not done:
+        result = client.collection.status(req_id)
+        if result.state == "finished":
+            done = True
+        sleep(5)
+
+    # Task is complete, go back to the automation request to get the output
+    client.collection = "automation_requests"
+    result = client.collection.status(req_id)
 
     # see the return and options of the automate request
     print("Options from the automate request: {0}".format(result.options))
@@ -76,6 +88,7 @@ if fip_id:
         return_dict = ast.literal_eval(return_data)
         if return_dict["status"] != 202:
             print("Error deleting floating ip: %s" % return_dict)
+            raise SystemExit(1)
     else:
         # unexpected error, maybe Automate Datastore not imported?
         print("Unexpected Error when deleting floating ip")
@@ -86,7 +99,7 @@ client.collection = "instances"
 task_id = client.collection.terminate(inst_name=INPUT)
 print("Task ID of the deleted instance: {0}".format(task_id))
 
-# 5. check that task is successful
+# 5. check the deletion task, and wait for it to be finished
 client.collection = "tasks"
 done = False
 while not done:
@@ -98,9 +111,7 @@ while not done:
 if result.status == "Error":
     print("Deleting the instance: {0} failed: {1}".format(INPUT,
                                                           result.message))
-
     raise SystemExit(1)
-
 
 # 6. remove the vm reference in MIQ/Cloudforms, if deletion is successful
 client.collection = "vms"
