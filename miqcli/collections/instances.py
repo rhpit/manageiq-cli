@@ -18,18 +18,36 @@ import click
 from manageiq_client.api import APIException
 from miqcli.collections import CollectionsMixin
 from miqcli.decorators import client_api
+from miqcli.query import AdvancedQuery
 from miqcli.query import BasicQuery
+from miqcli.query import inject
 from miqcli.utils import log
 
 
 class Collections(CollectionsMixin):
     """Instances collections."""
 
+    @click.option('--by_id', type=bool, default=False,
+                  help='inst_name given as ID of instance" '
+                       'all other options except --attr are ignored')
     @click.option('--attr', type=str, default='',
                   help='attribute of an instance(s)', multiple=True)
+    @click.option('--provider', type=str, default='',
+                  help='provider of an instance(s)')
+    @click.option('--network', type=str, default='',
+                  help='cloud network of an instance(s)')
+    @click.option('--tenant', type=str, default='',
+                  help='cloud tenant of an instance(s)')
+    @click.option('--subnet', type=str, default='',
+                  help='cloud subnet of an instance(s)')
+    @click.option('--vendor', type=str, default='',
+                  help='vendor of an instance(s)')
+    @click.option('--itype', type=str, default='',
+                  help='type of an instance(s) - ex. "Openstack", "Amazon"...')
     @click.argument('inst_name', metavar='INST_NAME', type=str, default='')
     @client_api
-    def query(self, inst_name, attr):
+    def query(self, inst_name, provider=None, network=None, tenant=None,
+              subnet=None, vendor=None, itype=None, attr=None, by_id=False):
         """Query instances.
 
         ::
@@ -37,123 +55,178 @@ class Collections(CollectionsMixin):
 
         :param inst_name: name of the instance
         :type inst_name: str
+        :param provider: name of provider
+        :type provider: str
+        :param network: name of cloud network
+        :type network: str
+        :param tenant: name of cloud tentant
+        :type tenant: str
+        :param subnet: name of cloud subnetwork
+        :type subnet: str
+        :param vendor: name of vendor
+        :type vendor: str
+        :param itype: type of instance - "Openstack" or "Amazon"
+        :type itype: str
         :param attr: attribute
         :type attr: tuple
+        :param by_id: name is instance id
+        :type by_id: bool
         :return: instance object or list of instance objects
         """
 
-        # query based on instance name
-        if inst_name:
-            query = BasicQuery(self.collection)
-            instance = query(("name", "=", inst_name))
+        instances = None
 
-            if len(instance) < 1:
-                log.abort('Cannot find %s in %s' % (inst_name,
-                                                    self.collection.name))
-            if len(instance) > 1:
-                log.abort('Multiple matching instances for name: %s.' %
-                          (inst_name))
-            res = instance[0]
+        # Query by ID
+        if by_id:
+            # ID given in name
+            if inst_name:
+                # query based on instance name as ID
+                # all other options ignored except attr
 
+                qs_by_id = ("id", "=", inst_name)
+                query = BasicQuery(self.collection)
+                instances = query(qs_by_id, attr)
+
+                if len(instances) < 1:
+                    log.abort(
+                        'Cannot find Instance with ID:%s in %s' %
+                        (inst_name,
+                         self.collection.name))
+
+            # Error no ID given
+            else:
+                log.abort('No Instance ID given')
+
+        # Query by name and other options
+        else:
+            # Build query string
+            qstr = []
+            if inst_name:
+                qstr.append(("name", "=", inst_name))
+            if provider:
+                qstr.append(("ext_management_system.name", "=", provider))
+            if network:
+                qstr.append(("cloud_networks.name", "=", network))
+            if tenant:
+                qstr.append(("cloud_tenant.name", "=", tenant))
+            if subnet:
+                qstr.append(("cloud_subnets.name", "=", subnet))
+            if vendor:
+                qstr.append(("vendor", "=", vendor.lower()))
+            if itype:
+                type_str = "ManageIQ::Providers::%s::CloudManager::Vm" % itype
+                qstr.append(("type", "=", type_str))
+
+            # Concat together and'ing statements
+            qs = inject(qstr, "&")
+
+            # query based on instance name and other options
+            if len(qs) > 0:
+                if len(qs) == 1:
+                    # Name only
+                    query = BasicQuery(self.collection)
+                    instances = query(qs[0], attr)
+                else:
+                    # Mix of various options and name
+                    query = AdvancedQuery(self.collection)
+                    instances = query(qs, attr)
+
+                if len(instances) < 1:
+                    log.abort('No instance(s) found for given parameters')
+
+            # general query on all instances
+            else:
+
+                # return instances that have the attribute passed set
+                if attr:
+                    instances = self.collection.all_include_attributes(attr)
+
+                # attribute not set, pass back all instances w/basic info
+                else:
+                    instances = self.collection.all
+
+        if instances:
             log.info('-' * 50)
             log.info('Instance Info'.center(50))
             log.info('-' * 50)
 
-            # user passed an attribute(s) for the instance
-            if attr:
-                try:
-                    attr_instance = self.collection(res["id"], list(attr))
-                    # attribute = attr_instance[attr]
-                except AttributeError:
-                    log.abort('Attribute %s not found in Instance %s' %
-                              (attr, attr_instance['name']))
+            for e in instances:
+                log.info(' * ID: %s' % e['id'])
+                log.info(' * NAME: %s' % e['name'])
 
-                log.info(' * ID: %s' % attr_instance["id"])
-                log.info(' * NAME: %s' % attr_instance['name'])
-                for attribute in attr:
-                    log.info(' * %s: %s' % (attribute.upper(),
-                                            attr_instance[attribute]))
+                if attr:
+                    for a in attr:
+                        try:
+                            log.info(' * %s: %s' % (a.upper(), e[a]))
+                        except AttributeError:
+                            log.info(' * %s: ' % a.upper())
                 log.info('-' * 50)
-                return attr_instance
+
+            if len(instances) == 1:
+                return instances[0]
             else:
-                log.info(' * ID: %s' % res["id"])
-                log.info(' * NAME: %s' % res['name'])
-                log.info('-' * 50)
-                return res
-
-        # general query on all instances
+                return instances
         else:
+            log.abort('No instance(s) found for given parameters')
 
-            # return instances that have the attribute passed set
-            if attr:
-                found = False
-                attr_list = self.collection.all_include_attributes(list(attr))
-                itemlist = []
-                log.info('-' * 50)
-                log.info('Instances with {0}:'.format(
-                    ', '.join(list(attr))).center(50))
-                log.info('-' * 50)
-                for item in attr_list:
-                    if set(attr) < set(item._data):
-                        itemlist.append(item)
-                        found = True
-                        attribute_data = ' * ID: %s\tNAME: %s' % (item["id"],
-                                                                  item['name'])
-                        for attribute in attr:
-                            attribute_data += '\t%s: %s' % (attribute.upper(),
-                                                            item[attribute])
-                        log.info(attribute_data)
-                if not found:
-                    log.info('No matches for attr: %s in %s' %
-                             (attr, self.collection.name))
-                    return None
-                else:
-                    return itemlist
-
-            # attribute not set, pass back all instances w/basic info
-            else:
-                log.info('-' * 50)
-                log.info(' Instances'.center(50))
-                log.info('-' * 50)
-
-                for item in self.collection.all:
-                    log.info(' * ID: %s\tNAME: %s' %
-                             (item["id"], item['name']))
-                log.info('-' * 50)
-                return self.collection.all
-
+    @click.option('--by_id', type=bool, default=False,
+                  help='inst_name given as ID of instance '
+                       'all other options are ignored')
+    @click.option('--provider', type=str, default='',
+                  help='provider of an instance(s)')
+    @click.option('--network', type=str, default='',
+                  help='cloud network of an instance(s)')
+    @click.option('--tenant', type=str, default='',
+                  help='cloud tenant of an instance(s)')
+    @click.option('--subnet', type=str, default='',
+                  help='cloud subnet of an instance(s)')
+    @click.option('--vendor', type=str, default='',
+                  help='vendor of an instance(s)')
+    @click.option('--itype', type=str, default='',
+                  help='type of an instance(s) - ex. "Openstack", "Amazon"...')
     @click.argument('inst_name', metavar='INST_NAME', type=str, default='')
     @client_api
-    def terminate(self, inst_name):
+    def terminate(self, inst_name, provider=None, network=None, tenant=None,
+                  subnet=None, vendor=None, itype=None, by_id=False):
         """Terminate instance.
 
         ::
 
         :param inst_name: name of the instance
         :type inst_name: str
+        :param provider: provider of the instance
+        :type provider: str
+        :param network: name of cloud network
+        :type network: str
+        :param tenant: name of cloud tentant
+        :type tenant: str
+        :param subnet: name of cloud subnetwork
+        :type subnet: str
+        :param vendor: name of vendor
+        :type vendor: str
+        :param itype: type of instance - "Openstack" or "Amazon"
+        :type itype: str
+        :param by_id: name is instance id
+        :type by_id: bool
         :return: id of the task created to terminate the instance
         :rtype: int
         """
         if inst_name:
-            query = BasicQuery(self.collection)
-            instances = query(("name", "=", inst_name))
-            if len(instances) < 1:
-                log.abort('Instance: %s not found!' % inst_name)
-            elif len(instances) > 1:
-                # How do we handle deletion when there are multiple matches?
-                log.abort('Multiple matchine instances with name: '
-                          '{0}'.format(inst_name))
-            else:
-                try:
-                    result = instances[0].action.terminate()
-                    log.info("Task to terminate {0} created: {1}".format(
-                        inst_name, result["task_id"]))
-                    return result["task_id"]
-                except APIException as ex:
-                    log.abort('Unable to create a task: terminate instance: '
-                              '{0}: {1}'.format(inst_name, ex))
+            instance = self.query(inst_name, provider, network, tenant,
+                                  subnet, vendor, itype, by_id=by_id)
+            if instance and type(instance) is list:
+                log.abort("Multiple instances found."
+                          "Supply more options to narrow.")
+            try:
+                result = instance.action.terminate()
+                log.info("Task to terminate {0} created: {1}".format(
+                    inst_name, result["task_id"]))
+                return result["task_id"]
+            except APIException as ex:
+                log.abort('Unable to create a task: terminate instance: '
+                          '{0}: {1}'.format(inst_name, ex))
         else:
-            log.abort('Set an instance name to be terminated.')
+            log.abort('Set an instance to be terminated.')
 
     @client_api
     def stop(self):

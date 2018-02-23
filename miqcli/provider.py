@@ -20,7 +20,7 @@ from miqcli.query import AdvancedQuery
 from miqcli.utils import log
 
 __all__ = ['Flavors', 'Templates', 'SecurityGroups', 'KeyPair', 'Tenant',
-           'Networks']
+           'Networks', 'Instances', 'Vms']
 
 
 class Provider(object):
@@ -291,3 +291,27 @@ class Networks(Provider):
                 network.title()
         else:
             self.type = self.network_type + '::CloudNetwork'
+
+
+class Instances(Provider):
+    """Provider Instance component."""
+
+    __collection_name__ = 'instances'
+
+    def __init__(self, name, api):
+        """Constructor."""
+        super(Instances, self).__init__(name, api)
+        self.collection = self.__collection_name__
+        self.type = self.cloud_type + '::Vm'
+
+
+class Vms(Provider):
+    """Provider Vm component."""
+
+    __collection_name__ = 'vms'
+
+    def __init__(self, name, api):
+        """Constructor."""
+        super(Vms, self).__init__(name, api)
+        self.collection = self.__collection_name__
+        self.type = self.cloud_type + '::Vm'
