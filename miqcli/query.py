@@ -16,10 +16,15 @@
 
 from manageiq_client.api import APIException
 from manageiq_client.filters import Q
-
 from miqcli.utils import log
 
-__all__ = ['BasicQuery', 'AdvancedQuery']
+__all__ = ['BasicQuery', 'AdvancedQuery', 'inject']
+
+
+def inject(lst, item):
+    result = [item] * (len(lst) * 2 - 1)
+    result[0::2] = lst
+    return result
 
 
 class BaseQuery(object):
@@ -73,7 +78,7 @@ class BasicQuery(BaseQuery):
         """
         super(BasicQuery, self).__init__(collection)
 
-    def __call__(self, query):
+    def __call__(self, query, attr=None):
         """Performs a basic query on a collection.
 
         :param query: query containing name, operand and value
@@ -100,10 +105,17 @@ class BasicQuery(BaseQuery):
             resources = getattr(self.collection, 'filter')(
                 Q(query[0], query[1], query[2])
             )
+
             self.resources = resources.resources
+
+            if attr:
+                for ent in resources.resources:
+                    ent.reload(True, True, attr)
+
         except (APIException, ValueError) as e:
             log.error('Query attempted failed: {0}, error: {1}'.format(
                 query, e))
+
         return self.resources
 
 
@@ -121,7 +133,7 @@ class AdvancedQuery(BaseQuery):
         """
         super(AdvancedQuery, self).__init__(collection)
 
-    def __call__(self, query):
+    def __call__(self, query, attr=None):
         """Performs a advanced query on a collection.
 
         :param query: multiple queries containing name, operand and value
@@ -160,9 +172,16 @@ class AdvancedQuery(BaseQuery):
 
         try:
             resources = getattr(self.collection, 'filter')(eval(adv_query))
+
             self.resources = resources.resources
+
+            if attr:
+                for ent in resources.resources:
+                    ent.reload(True, True, attr)
+
         except (APIException, ValueError, TypeError) as e:
             # most likely user passed an invalid attribute name
             log.error('Query attempted failed: {0}, error: {1}'.format(
                 query, e))
+
         return self.resources
