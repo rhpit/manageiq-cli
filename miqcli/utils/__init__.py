@@ -119,7 +119,7 @@ def get_class_methods(cls):
     for key, value in cls.__dict__.items():
         if not isinstance(value, FunctionType):
             continue
-        if key == "__init__":
+        if key.startswith('_'):
             continue
         methods.append(key)
     methods.sort()

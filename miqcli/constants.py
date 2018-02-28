@@ -77,7 +77,7 @@ for name in vars(AR):
         all_ar_requests.append(name)
 
 SUPPORTED_AUTOMATE_REQUESTS = all_ar_requests
-SUPPORTED_PROVIDERS = ["OpenStack", "Amazon"]
+SUPPORTED_PROVIDERS = ["Amazon", "OpenStack"]
 REQUIRED_OSP_KEYS = ["email", "tenant", "image", "network",
                      "flavor", "vm_name"]
 OPTIONAL_OSP_KEYS = ["fip_pool", "security_group", "key_pair"]

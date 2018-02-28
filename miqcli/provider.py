@@ -19,8 +19,8 @@ from manageiq_client.api import APIException
 from miqcli.query import AdvancedQuery
 from miqcli.utils import log
 
-__all__ = ['Flavors', 'Templates', 'SecurityGroups', 'KeyPair', 'Tenant',
-           'Networks', 'Instances', 'Vms']
+__all__ = ['Provider', 'Flavors', 'Templates', 'SecurityGroups', 'KeyPair',
+           'Tenant', 'Networks', 'Instances', 'Vms']
 
 
 class Provider(object):
