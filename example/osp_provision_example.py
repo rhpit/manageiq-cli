@@ -140,13 +140,10 @@ else:
     vm_provider = None
     vm_network = None
     vm_tenant = None
-    vm_subnet = None
     if "provider" in payload_data and payload_data["provider"]:
         vm_provider = payload_data["provider"]
     if "network" in payload_data and payload_data["network"]:
         vm_network = payload_data["network"]
-    if "subnet" in payload_data and payload_data["subnet"]:
-        vm_subnet = payload_data["subnet"]
     if "tenant" in payload_data and payload_data["tenant"]:
         vm_tenant = payload_data["tenant"]
 
@@ -156,7 +153,6 @@ else:
                                             provider=vm_provider,
                                             network=vm_network,
                                             tenant=vm_tenant,
-                                            subnet=vm_subnet,
                                             attr=("floating_ip",))
         if instances and type(instances) is list:
             print("Multiple instances found.")
