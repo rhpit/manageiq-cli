@@ -178,11 +178,15 @@ class ClientAPI(object):
         :return: True if token is valid otherwise False
         """
         headers = {'Accept': 'application/json', 'X-Auth-Token': token}
-        output = requests.get(self._url, headers=headers,
-                              verify=self._verify_ssl)
-        if output.status_code != 200:
-            return False
-        return True
+        try:
+            output = requests.get(self._url, headers=headers,
+                                  verify=self._verify_ssl)
+            if output.status_code != 200:
+                return False
+            return True
+        except ConnectionError:
+            log.abort('Error connecting to service. Check your connection '
+                      'settings.')
 
     def _generate_token(self):
         """
