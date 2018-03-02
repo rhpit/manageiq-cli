@@ -53,7 +53,8 @@ if "fip_pool" in payload_data and payload_data["fip_pool"]:
     done = False
     while not done:
         result = client.collection.status(req_id)
-        if result.request_state == "active":
+        if result.request_state == "active" or\
+                result.request_state == "finished":
             done = True
         sleep(5)
 
@@ -108,7 +109,7 @@ print("ID of the request: {0}".format(req_id))
 done = False
 while not done:
     result = client.collection.status(req_id)
-    if result.request_state == "active":
+    if result.request_state == "active" or result.request_state == "finished":
         done = True
     sleep(5)
 
@@ -134,11 +135,39 @@ else:
     client.collection = "provision_requests"
     result = client.collection.status(req_id)
     vm_name = payload_data["vm_name"]
+
+    # Set key attributes if provided
+    vm_provider = None
+    vm_network = None
+    vm_tenant = None
+    if "provider" in payload_data and payload_data["provider"]:
+        vm_provider = payload_data["provider"]
+    if "network" in payload_data and payload_data["network"]:
+        vm_network = payload_data["network"]
+    if "tenant" in payload_data and payload_data["tenant"]:
+        vm_tenant = payload_data["tenant"]
+
     try:
         client.collection = "instances"
         instances = client.collection.query(inst_name=vm_name,
+                                            provider=vm_provider,
+                                            network=vm_network,
+                                            tenant=vm_tenant,
                                             attr=("floating_ip",))
-        fip = instances["floating_ip"]["address"]
-        print("Floating ip for {0}: {1}".format(vm_name, fip))
+        if instances and type(instances) is list:
+            print("Multiple instances found.")
+            print("Unable to specify specific floating ip for created vm")
+            raise SystemExit(1)
+        elif not instances:
+            print("Issues creating vm. No vm found to obtain floating ip")
+            raise SystemExit(1)
+        else:
+            try:
+                fip_id = instances["floating_ip"]["address"]
+                print("Floating ip for {0}: {1}".format(vm_name, fip_id))
+            except AttributeError as e:
+                print('No associated floating ips for vm: {0}'.format(
+                    instances["name"]))
     except SystemExit as e:
-        print('Floating ip not found for instance: {0}'.format(vm_name))
+        print(e.message)
+        raise SystemExit(1)

@@ -89,7 +89,8 @@ if fip_id and instances["vendor"] == "openstack":
     done = False
     while not done:
         result = client.collection.status(req_id)
-        if result.request_state == "active":
+        if result.request_state == "active" or\
+                result.request_state == "finished":
             done = True
         sleep(5)
 
