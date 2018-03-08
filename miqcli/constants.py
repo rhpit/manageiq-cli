@@ -74,7 +74,7 @@ class AR:
 all_ar_requests = []
 for name in vars(AR):
     if not name.startswith('_'):
-        all_ar_requests.append(name)
+        all_ar_requests.append(getattr(AR, name))
 
 SUPPORTED_AUTOMATE_REQUESTS = all_ar_requests
 SUPPORTED_PROVIDERS = ["Amazon", "OpenStack"]
