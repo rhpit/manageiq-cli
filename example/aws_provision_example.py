@@ -14,20 +14,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from miqcli import Client
 import json
+from miqcli.constants import DEFAULT_CONFIG
+from miqcli import Client
 from time import sleep
 
 # create a client object
-# pass in config, if empty {} means it will use the default credentials
-config = {
-    'username': 'admin',
-    'password': 'smartvm',
-    'url': 'https://localhost:8443',
-    'enable_ssl_verify': False
-}
+# use the default credentials
+client = Client(DEFAULT_CONFIG)
 
-client = Client(config)
 # 1. Gather the input payload data
 # Uncomment desired example
 # Auto Placement or Specifying Placement (Network and Subnet)
