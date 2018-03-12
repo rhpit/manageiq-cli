@@ -74,7 +74,7 @@ def check_docker_image_exist(name, tag=None):
     global client
     repotag = build_docker_image_id(name, tag=tag)
     for img in client.images.list():
-        if img.attrs.has_key('RepoTags') and \
+        if 'RepoTags' in img.attrs and \
             img.attrs['RepoTags'] is not None:
             if repotag in img.attrs['RepoTags']:
                 print("Image '%s' found." % repotag)
@@ -115,14 +115,23 @@ def start(c_name):
     # run a new instance of ManageIQ container
     print('Starting new container...')
     global container
-    container = client.containers.run(
-        build_docker_image_id(name=MANAGEIQ_IMAGE_NAME, tag=MANAGEIQ_IMAGE_TAG),
-        privileged=True,
-        ports={'443/tcp': 8443},
-        detach=True,
-        name='{0}'.format(c_name if c_name is not None else 'miqcli_test')
-    )
-    print("Container started and it is detached.")
+    try:
+        container = client.containers.run(
+            build_docker_image_id(name=MANAGEIQ_IMAGE_NAME, tag=MANAGEIQ_IMAGE_TAG),
+            privileged=True,
+            ports={'443/tcp': 8443},
+            detach=True,
+            name='{0}'.format(c_name if c_name is not None else 'miqcli_test')
+        )
+        print("Container started and it is detached.")
+    except docker.errors.APIError as e:
+        if e.response.status_code == 409:
+            print('ERROR: The container \'%s\' seems to be running. '
+                  'Stop and delete it before running the tests.' % c_name)
+        else:
+            print('ERROR: the container \'%s\' can not be started.' % c_name)
+            print(e)
+        exit(1)
 
 
 def stop(c_name):
