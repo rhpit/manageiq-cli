@@ -245,6 +245,7 @@ command line section above for payload file content examples.
 
 .. literalinclude:: ../../../example/aws_provision_example.py
     :linenos:
+    :lines: 16-
 
 On completion, you should receive Success with instance information or
 an Error message.
@@ -416,6 +417,7 @@ module to delete a virtual machine. Before running the Python code, replace the
 
 .. literalinclude:: ../../../example/aws_deletion_example.py
     :linenos:
+    :lines: 17-
 
 On completion, you should receive a Success or Error message.
 
