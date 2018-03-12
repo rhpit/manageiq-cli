@@ -17,6 +17,7 @@
 import click
 from collections import OrderedDict
 from manageiq_client.api import APIException
+from pprint import pformat
 
 from miqcli.collections import CollectionsMixin
 from miqcli.constants import OSP_FIP_PAYLOAD, SUPPORTED_AUTOMATE_REQUESTS, AR
@@ -146,7 +147,7 @@ class Collections(CollectionsMixin):
             for key, value in status.items():
                 log.info(' * %s: %s' % (key.upper(), value))
             # if verbosity is set, get more info about the request
-            log.debug(req.options)
+            log.debug('\n' + pformat(req.options, indent=4))
             log.info('-' * 50)
 
             return req
