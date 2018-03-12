@@ -56,6 +56,12 @@ class Config(dict):
         """
         _cfg_file = None
 
+        # verify directory is defined
+        if not os.path.isdir(directory):
+            if self._verbose:
+                log.warning('Directory {0} is undefined.'.format(directory))
+            return
+
         # verify config file exists
         for entry in os.listdir(directory):
             _file = os.path.splitext(entry)
