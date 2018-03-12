@@ -145,6 +145,8 @@ class Collections(CollectionsMixin):
             log.info(' * ID: %s' % req_id)
             for key, value in status.items():
                 log.info(' * %s: %s' % (key.upper(), value))
+            # if verbosity is set, get more info about the request
+            log.debug(req.options)
             log.info('-' * 50)
 
             return req
