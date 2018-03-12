@@ -1,0 +1,5 @@
+---
+url: https://localhost:8443
+username: admin
+password: smartvm
+enable_ssl_verify: False

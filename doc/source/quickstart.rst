@@ -7,5 +7,6 @@ Below are getting started guides for invoking actions through the
 .. toctree::
     :maxdepth: 2
 
+    configuration
     providers/amazon
     providers/openstack
