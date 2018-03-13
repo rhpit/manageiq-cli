@@ -80,7 +80,8 @@ SUPPORTED_AUTOMATE_REQUESTS = all_ar_requests
 SUPPORTED_PROVIDERS = ["Amazon", "OpenStack"]
 REQUIRED_OSP_KEYS = ["email", "tenant", "image", "network",
                      "flavor", "vm_name"]
-OPTIONAL_OSP_KEYS = ["fip_pool", "security_group", "key_pair"]
+OPTIONAL_OSP_KEYS = ["fip_pool", "security_group", "key_pair",
+                     "floating_ip_id"]
 
 REQUIRED_AWS_AUTO_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name"]
 REQUIRED_AWS_PLACEMENT_KEYS = ["email", "image", "flavor", "vm_name",
