@@ -21,14 +21,14 @@ Command Line
 Command used to create a provider:
 
 .. code-block:: bash
-       :linenos:
+    :linenos:
 
     (miq-client) $ miqcli providers create
 
 You can view the available options by passing the **help** option.
 
 .. code-block:: bash
-       :linenos:
+    :linenos:
 
     (miq-client) $ miqcli providers create --help
 
@@ -37,7 +37,7 @@ create a new provider. Before running the command, replace the **<value>**
 with your OpenStack authentication details.
 
 .. code-block:: bash
-       :linenos:
+    :linenos:
 
     (miq-client) $ miqcli providers create \
     --hostname <hostname>
@@ -59,7 +59,7 @@ This code example will demonstrate how you can use the client in a Python
 module to create a new provider.
 
 .. literalinclude:: ../../../example/providers/openstack/create.py
-       :linenos:
+    :linenos:
     :lines: 32-
 
 On completion, you should receive an ID for your transaction.
@@ -83,14 +83,14 @@ Command Line
 Command used to delete a provider:
 
 .. code-block:: bash
-       :linenos:
+    :linenos:
 
     (miq-client) $ miqcli providers delete
 
 You can view the available options by passing the **help** option.
 
 .. code-block:: bash
-       :linenos:
+    :linenos:
 
     (miq-client) $ miqcli providers delete --help
 
@@ -98,7 +98,7 @@ This command when run will send a request to ManageIQ for a new transaction to
 delete the provider.
 
 .. code-block:: bash
-       :linenos:
+    :linenos:
 
     (miq-client) $ miqcli providers delete OpenStack
 
@@ -116,7 +116,7 @@ This code example will demonstrate how you can use the client in a Python
 module to delete a provider.
 
 .. literalinclude:: ../../../example/providers/openstack/delete.py
-       :linenos:
+    :linenos:
     :lines: 27-
 
 On completion, you should receive an ID for your transaction.
@@ -143,8 +143,8 @@ format.  The required and optional keys are shown after the example. The
 following is an example of the payload for OpenStack with all options:
 
 .. literalinclude:: ../../../example/openstack_provision_ex.json
-   :language: JSON
-   :linenos:
+    :language: JSON
+    :linenos:
 
 .. list-table::
     :widths: auto
