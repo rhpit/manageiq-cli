@@ -25,11 +25,10 @@ How to run:
 """
 
 from miqcli import Client
-from miqcli.constants import DEFAULT_CONFIG
 
 
 def main():
-    client = Client(DEFAULT_CONFIG)
+    client = Client()
     client.collection = 'providers'
 
     client.collection.delete('Amazon')

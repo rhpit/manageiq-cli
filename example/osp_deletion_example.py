@@ -32,15 +32,7 @@ INPUT_SUBNET = None
 
 
 # create a client object
-# pass in config, if empty {} means it will use the default credentials
-config = {
-    'username': 'admin',
-    'password': 'smartvm',
-    'url': 'https://localhost:8443',
-    'enable_ssl_verify': False
-}
-
-client = Client(config)
+client = Client()
 fip_id = None
 
 # 1. Query the instance to delete to see if the instance has a floating ip

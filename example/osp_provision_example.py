@@ -20,15 +20,7 @@ import json
 from time import sleep
 
 # create a client object
-# pass in config, if empty {} means it will use the default credentials
-config = {
-    'username': 'admin',
-    'password': 'smartvm',
-    'url': 'https://localhost:8443',
-    'enable_ssl_verify': False
-}
-
-client = Client(config)
+client = Client()
 
 # 1. Gather the input payload data
 payload_file = "openstack_provision_ex.json"

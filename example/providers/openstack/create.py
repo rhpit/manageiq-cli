@@ -32,7 +32,6 @@ How to run:
 import os
 
 from miqcli import Client
-from miqcli.constants import DEFAULT_CONFIG
 
 HOSTNAME = os.getenv('OSP_HOSTNAME')
 PORT = os.getenv('OSP_PORT')
@@ -41,7 +40,7 @@ PASSWORD = os.getenv('OSP_PASSWORD')
 
 
 def main():
-    client = Client(DEFAULT_CONFIG)
+    client = Client()
     client.collection = 'providers'
 
     client.collection.create(
