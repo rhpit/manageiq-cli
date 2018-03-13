@@ -55,24 +55,11 @@ Python Code
 +++++++++++
 
 This code example will demonstrate how you can use the client in a Python
-module to create a new provider. Before running the Python code, replace the
-**<value>** with your Amazon authentication details.
+module to create a new provider.
 
-.. code-block:: python
+.. literalinclude:: ../../../example/providers/amazon/create.py
     :linenos:
-
-    from miqcli import Client
-    from miqcli.constants import DEFAULT_CONFIG
-
-    client = Client(DEFAULT_CONFIG)
-    client.collection = 'providers'
-
-    client.collection.create(
-        'Amazon',
-        region=<region>,
-        username=<username>,
-        password=<password>
-    )
+    :lines: 32-
 
 On completion, you should receive an ID for your transaction.
 
@@ -128,16 +115,9 @@ Python Code
 This code example will demonstrate how you can use the client in a Python
 module to delete a provider.
 
-.. code-block:: python
+.. literalinclude:: ../../../example/providers/amazon/delete.py
     :linenos:
-
-    from miqcli import Client
-    from miqcli.constants import DEFAULT_CONFIG
-
-    client = Client(DEFAULT_CONFIG)
-    client.collection = 'providers'
-
-    client.collection.delete('Amazon')
+    :lines: 27-
 
 On completion, you should receive an ID for your transaction.
 
