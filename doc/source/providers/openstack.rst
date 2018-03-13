@@ -21,14 +21,14 @@ Command Line
 Command used to create a provider:
 
 .. code-block:: bash
-    :linenos:
+       :linenos:
 
     (miq-client) $ miqcli providers create
 
 You can view the available options by passing the **help** option.
 
 .. code-block:: bash
-    :linenos:
+       :linenos:
 
     (miq-client) $ miqcli providers create --help
 
@@ -37,7 +37,7 @@ create a new provider. Before running the command, replace the **<value>**
 with your OpenStack authentication details.
 
 .. code-block:: bash
-    :linenos:
+       :linenos:
 
     (miq-client) $ miqcli providers create \
     --hostname <hostname>
@@ -56,25 +56,11 @@ Python Code
 +++++++++++
 
 This code example will demonstrate how you can use the client in a Python
-module to create a new provider. Before running the Python code, replace the
-**<value>** with your OpenStack authentication details.
+module to create a new provider.
 
-.. code-block:: python
-    :linenos:
-
-    from miqcli import Client
-    from miqcli.constants import DEFAULT_CONFIG
-
-    client = Client(DEFAULT_CONFIG)
-    client.collection = 'providers'
-
-    client.collection.create(
-        'OpenStack',
-        hostname=<hostname>,
-        port=<port>,
-        username=<username>,
-        password=<password>
-    )
+.. literalinclude:: ../../../example/providers/openstack/create.py
+       :linenos:
+    :lines: 32-
 
 On completion, you should receive an ID for your transaction.
 
@@ -97,14 +83,14 @@ Command Line
 Command used to delete a provider:
 
 .. code-block:: bash
-    :linenos:
+       :linenos:
 
     (miq-client) $ miqcli providers delete
 
 You can view the available options by passing the **help** option.
 
 .. code-block:: bash
-    :linenos:
+       :linenos:
 
     (miq-client) $ miqcli providers delete --help
 
@@ -112,7 +98,7 @@ This command when run will send a request to ManageIQ for a new transaction to
 delete the provider.
 
 .. code-block:: bash
-    :linenos:
+       :linenos:
 
     (miq-client) $ miqcli providers delete OpenStack
 
@@ -129,16 +115,9 @@ Python Code
 This code example will demonstrate how you can use the client in a Python
 module to delete a provider.
 
-.. code-block:: python
-    :linenos:
-
-    from miqcli import Client
-    from miqcli.constants import DEFAULT_CONFIG
-
-    client = Client(DEFAULT_CONFIG)
-    client.collection = 'providers'
-
-    client.collection.delete('OpenStack')
+.. literalinclude:: ../../../example/providers/openstack/delete.py
+       :linenos:
+    :lines: 27-
 
 On completion, you should receive an ID for your transaction.
 
@@ -407,9 +386,13 @@ Python Code
 +++++++++++
 
 This code example will demonstrate how you can use the client in a Python
-module to create a virtual machine. Create the payload file, and **update
-the code below with the name of your payload_file** or call your payload
-file  "openstack_provision_ex.json", and execute the code below. The code
+module to create a virtual machine. Create the payload file(as specified
+in :ref:`osp_payload`), and **update the code below with the name of your
+payload_file** or call your payload file  "openstack_provision_ex.json", 
+and execute the code below. If you want a floating ip, you only need to
+add a value for the optional **fip_pool** key (you do not need to set the
+floating_ip_id, the code will create a floating ip, get the id and add it
+to the provisioning request), else just set the Required keys. The code
 accomplishes the following tasks:
 
 * Checks if the user wants a floating ip, if so call a Cloudforms automate
@@ -476,9 +459,15 @@ following:
     INFO:  * STATUS: Ok
     INFO:  * MESSAGE: Automation Request completed
     INFO: --------------------------------------------------
-    Options from the automate request: {'namespace': 'CF_MIQ_CLI/General', 'class_name': 'Methods', 'instance_name': 'get_floating_ip', 'user_id': 1, 'attrs': {'cloud_network_id': 2, 'cloud_tenant_id': 1, 'userid': 'admin'}, 'delivered_on': '2018-03-09T20:07:50.248Z', 'return': '{"status":"success","return":{"10.8.249.199":753}}'}
+    Options from the automate request: {'namespace': 'CF_MIQ_CLI/General', 'class_name':
+    'Methods', 'instance_name': 'get_floating_ip', 'user_id': 1, 'attrs': {'cloud_network_id':
+    2, 'cloud_tenant_id': 1, 'userid': 'admin'}, 'delivered_on': '2018-03-09T20:07:50.248Z',
+    'return': '{"status":"success","return":{"10.8.249.199":753}}'}
     got floating ip: 10.8.249.199: 753
-    updated payload data w/floating ip: {'email': '<email_address_set>', 'tenant': 'pit-jenkins', 'image': 'rhel-7.4-server-x86_64-latest', 'security_group': 'default', 'network': 'pit-jenkins', 'flavor': 'm1.small', 'key_pair': 'pit-jenkins', 'vm_name': '<instance_name>', 'fip_pool': '10.8.240.0', 'floating_ip_id': 753}
+    updated payload data w/floating ip: {'email': '<email_address_set>', 'tenant':
+    'pit-jenkins', 'image': 'rhel-7.4-server-x86_64-latest', 'security_group':
+    'default', 'network': 'pit-jenkins', 'flavor': 'm1.small', 'key_pair': 'pit-jenkins',
+    'vm_name': '<instance_name>', 'fip_pool': '10.8.240.0', 'floating_ip_id': 753}
     INFO: Attempt to create a provision request
     INFO: Provisioning request created: 137
     ID of the request: 137
