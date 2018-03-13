@@ -1,8 +1,0 @@
----
-url: https://localhost:8443
-username: admin
-password: smartvm
-# set either username/password or token for authentication.
-# token takes precedence if both are set
-# token: askldfjsa234982jksaldf
-enable_ssl_verify: False
