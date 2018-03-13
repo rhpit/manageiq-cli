@@ -7,5 +7,6 @@
     "flavor": "<flavor>",
     "key_pair": "<key_pair>",
     "vm_name": "<instance_name>",
-    "fip_pool": "<floating_ip_pool>"
+    "fip_pool": "<floating_ip_pool>",
+    "floating_ip_id": "<floating_ip_id>"
 }
