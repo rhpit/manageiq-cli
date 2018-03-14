@@ -32,7 +32,6 @@ How to run:
 import os
 
 from miqcli import Client
-from miqcli.constants import DEFAULT_CONFIG
 
 REGION = os.getenv('AWS_REGION')
 ZONE = os.getenv('AWS_ZONE')
@@ -41,7 +40,7 @@ PASSWORD = os.getenv('AWS_PASSWORD')
 
 
 def main():
-    client = Client(DEFAULT_CONFIG)
+    client = Client()
     client.collection = 'providers'
 
     client.collection.create(

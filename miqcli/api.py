@@ -28,8 +28,8 @@ from manageiq_client.api import APIException, ManageIQClient
 
 from requests.exceptions import ConnectionError
 
-from miqcli.constants import TOKENFILE, DEFAULT_CONFIG
-from miqcli.utils import log, get_collection_class
+from miqcli.constants import CFG_DIR, CFG_NAME, DEFAULT_CONFIG, TOKENFILE
+from miqcli.utils import log, get_collection_class, Config
 
 __all__ = ['ClientAPI', 'Client']
 
@@ -267,7 +267,7 @@ class Client(object):
 
     _collection = object
 
-    def __init__(self, conf, verbose=False):
+    def __init__(self, conf=None, verbose=False):
         """Constructor.
 
         :param conf: server configuration
@@ -276,8 +276,16 @@ class Client(object):
         :type verbose: bool
         """
 
+        # lets first load the correct server configuration settings
+        config = Config(settings=DEFAULT_CONFIG, verbose=verbose)
+        if conf:
+            config.update(conf)
+        config.from_yml(CFG_DIR, CFG_NAME)
+        config.from_yml(os.path.join(os.getcwd()), CFG_NAME)
+        config.from_env('MIQ_CFG')
+
         # create client api instance
-        api = ClientAPI(conf)
+        api = ClientAPI(config)
         api.connect()
 
         # create click context object (req. for each collection class)

@@ -15,13 +15,12 @@
 #
 
 import json
-from miqcli.constants import DEFAULT_CONFIG
 from miqcli import Client
 from time import sleep
 
 # create a client object
 # use the default credentials
-client = Client(DEFAULT_CONFIG)
+client = Client()
 
 # 1. Gather the input payload data
 # Uncomment desired example

@@ -15,7 +15,6 @@
 #
 
 from miqcli import Client
-from miqcli.constants import DEFAULT_CONFIG
 from time import sleep
 
 # The input to aws deletion is the name of the vm and provider name
@@ -32,7 +31,7 @@ INPUT_PROVIDER_NAME = None
 INPUT_NETWORK = None
 INPUT_SUBNET = None
 
-client = Client(DEFAULT_CONFIG)
+client = Client()
 
 # 1. Query the instance to obtain ID
 client.collection = "instances"

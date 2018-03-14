@@ -35,15 +35,15 @@ __all__ = ['Config', 'get_class_methods', 'get_client_api_pointer',
 class Config(dict):
     """Configuration class."""
 
-    def __init__(self, defaults=None, verbose=False):
+    def __init__(self, settings=None, verbose=False):
         """Constructor.
 
-        :param defaults: base dictionary configuration
-        :type defaults: dict
+        :param settings: configuration settings
+        :type settings: dict
         :param verbose: verbosity mode
         :type verbose: bool
         """
-        super(Config, self).__init__(defaults or {})
+        super(Config, self).__init__(settings or {})
         self._verbose = verbose
 
     def from_yml(self, directory, filename):
