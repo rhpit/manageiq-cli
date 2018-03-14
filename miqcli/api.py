@@ -277,7 +277,7 @@ class Client(object):
         """
 
         # lets first load the correct server configuration settings
-        config = Config(defaults=DEFAULT_CONFIG, verbose=verbose)
+        config = Config(settings=DEFAULT_CONFIG, verbose=verbose)
         if conf:
             config.update(conf)
         config.from_yml(CFG_DIR, CFG_NAME)
