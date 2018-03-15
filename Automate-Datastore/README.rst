@@ -43,15 +43,22 @@ Methods Input
         - Type
         - Required
 
-    *   - add_floating_ip
+    *   - get_floating_ip
         - cloud_tenant_id
 
           cloud_network_id
+
+          count
         - Integer
+
+          Integer
 
           Integer
         - Yes
 
+          Yes
+
+          No
     *   - allocate_floating_ip
         - vm_name
 
