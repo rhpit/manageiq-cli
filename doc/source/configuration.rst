@@ -165,7 +165,7 @@ miqcli.yaml file):
     INFO:  * Description: Default Zone
     INFO: --------------------------------------------------
 
-If your settings are incorrect, you will see the an error such as:
+If your settings are incorrect, you will see an error such as:
 
 .. code-block:: bash
     :linenos:
