@@ -149,7 +149,7 @@ your ManageIQ server to verify your settings are valid.
 
     (miq-client) $ miqcli --verbose zones query
 
-If you have correct setting to a remote ManageIQ server, your output should
+If your settings are correct to a remote ManageIQ server, your output should
 look like the following (the following has the configuration set in a local
 miqcli.yaml file):
 
@@ -165,9 +165,7 @@ miqcli.yaml file):
     INFO:  * Description: Default Zone
     INFO: --------------------------------------------------
 
-If your settings are incorrect, you will see the an error (please
-update your settings with the correct setting before proceeding).
-The following is an example of incorrect credentials:
+If your settings are incorrect, you will see the an error such as:
 
 .. code-block:: bash
     :linenos:
@@ -176,3 +174,5 @@ The following is an example of incorrect credentials:
      WARNING: Config environment variable is undefined.
      ERROR: Unsuccessful attempt to authenticate: 401
 
+If you see an error, please update your settings, and try again until
+this command succeeds before proceeding.
