@@ -16,6 +16,7 @@
 
 from miqcli.collections import CollectionsMixin
 from miqcli.decorators import client_api
+from miqcli.utils import log
 
 
 class Collections(CollectionsMixin):
@@ -24,4 +25,13 @@ class Collections(CollectionsMixin):
     @client_api
     def query(self):
         """Query."""
-        raise NotImplementedError
+        zones = self.all
+        log.info('-' * 50)
+        log.info('Zones'.center(50))
+        log.info('-' * 50)
+        for zone in zones:
+            log.info(' * ID: %s' % zone['id'])
+            log.info(' * Name: %s' % zone['name'])
+            log.info(' * Description: %s' % zone['description'])
+            log.info('-' * 50)
+        return zones

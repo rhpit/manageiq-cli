@@ -137,3 +137,42 @@ environment variables:
     E.g. If you set settings from the command line options and have settings
     defined in a file. The settings from the command line will be overridden
     by the ones defined in the file.
+
+Validating Configuration Settings
+---------------------------------
+
+Once your settings have been created, run the following command against
+your ManageIQ server to verify your settings are valid.
+
+.. code-block:: bash
+    :linenos:
+
+    (miq-client) $ miqcli --verbose zones query
+
+If your settings are correct to a remote ManageIQ server, your output should
+look like the following (the following has the configuration set in a local
+miqcli.yaml file):
+
+.. code-block:: bash
+    :linenos:
+
+    WARNING: Config file at /etc/miqcli is undefined.
+    WARNING: Config environment variable is undefined.
+    INFO: --------------------------------------------------
+    INFO:                       Zones                       
+    INFO: --------------------------------------------------
+    INFO:  * ID: 2018000000000001
+    INFO:  * Description: Default Zone
+    INFO: --------------------------------------------------
+
+If your settings are incorrect, you will see an error such as:
+
+.. code-block:: bash
+    :linenos:
+
+     WARNING: Config file at /etc/miqcli is undefined.
+     WARNING: Config environment variable is undefined.
+     ERROR: Unsuccessful attempt to authenticate: 401
+
+If you see an error, please update your settings, and try again until
+this command succeeds before proceeding.
