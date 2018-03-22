@@ -254,14 +254,16 @@ class Collections(CollectionsMixin):
         """Delete.
 
         ::
+        Delete the vm with the provided options.
+
         :param vm_name: name of the vm
         :type vm_name: str
         :param provider: name of the provider
         :type provider: str
         :param vendor: name of vendor
         :type vendor: str
-        :param itype: type of vm - "Openstack" or "Amazon"
-        :type itype: str
+        :param vtype: type of vm - "Openstack" or "Amazon"
+        :type vtype: str
         :param by_id: name is vm id
         :type by_id: bool
         :return: id of a task that will delete the vm

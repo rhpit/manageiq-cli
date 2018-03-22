@@ -159,6 +159,8 @@ class Provider(object):
         """Get the resource based on the name given.
         :param name: resource name
         :type name: str
+        :param tenant_id: optional tenant_id for querying
+        :type tenant_id: str
         :return: resources found from query
         :rtype: list
         """
@@ -258,7 +260,11 @@ class SecurityGroups(Provider):
         self.type = self.network_type + '::SecurityGroup'
 
     def get_id(self, name, tenant_id):
-        """Override the parent get_id."""
+        """Override the parent get_id.
+        :param name: resource name
+        :type name: str
+        :param tenant_id: tenant_id for querying
+        :type tenant_id: str"""
         self.get_resource(name, tenant_id)
         return getattr(self.query, 'id')
 
@@ -302,7 +308,11 @@ class Networks(Provider):
             self.type = self.network_type + '::CloudNetwork'
 
     def get_id(self, name, tenant_id=None):
-        """Override the parent get_id."""
+        """Override the parent get_id.
+        :param name: resource name
+        :type name: str
+        :param tenant_id: optional tenant_id for querying
+        :type tenant_id: str"""
         self.get_resource(name, tenant_id)
         return getattr(self.query, 'id')
 
