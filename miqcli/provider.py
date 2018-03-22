@@ -155,7 +155,7 @@ class Provider(object):
                 self.__collection_name__, ent_id, e))
         return output
 
-    def get_resource(self, name):
+    def get_resource(self, name, tenant_id=None):
         """Get the resource based on the name given.
         :param name: resource name
         :type name: str
@@ -163,7 +163,11 @@ class Provider(object):
         :rtype: list
         """
         # advanced query
-        _query = [('name', '=', name), '&', ('type', '=', self.type)]
+        if tenant_id:
+            _query = [('name', '=', name), '&', ('type', '=', self.type), '&',
+                      ('cloud_tenant_id', '=', tenant_id)]
+        else:
+            _query = [('name', '=', name), '&', ('type', '=', self.type)]
 
         # tell query which collection to run the query against
         self.query.collection = self.collection
@@ -253,6 +257,11 @@ class SecurityGroups(Provider):
         self.collection = self.__collection_name__
         self.type = self.network_type + '::SecurityGroup'
 
+    def get_id(self, name, tenant_id):
+        """Override the parent get_id."""
+        self.get_resource(name, tenant_id)
+        return getattr(self.query, 'id')
+
 
 class KeyPair(Provider):
     """Provider key pair component."""
@@ -291,6 +300,11 @@ class Networks(Provider):
                 network.title()
         else:
             self.type = self.network_type + '::CloudNetwork'
+
+    def get_id(self, name, tenant_id=None):
+        """Override the parent get_id."""
+        self.get_resource(name, tenant_id)
+        return getattr(self.query, 'id')
 
 
 class Instances(Provider):
