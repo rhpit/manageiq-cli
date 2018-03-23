@@ -84,6 +84,13 @@ class Collections(CollectionsMixin):
             OSP_PAYLOAD["requester"]["owner_email"] = input_data["email"]
             OSP_PAYLOAD["vm_fields"]["vm_name"] = input_data["vm_name"]
 
+            # lookup cloud tenant resource to get the id
+            tenant = Tenant(provider, self.api)
+            OSP_PAYLOAD['vm_fields']['cloud_tenant'] = tenant.get_id(
+                input_data['tenant']
+            )
+            tenant_id = OSP_PAYLOAD['vm_fields']['cloud_tenant']
+
             if 'floating_ip_id' in input_data:
                 OSP_PAYLOAD['vm_fields']['floating_ip_address'] = \
                     input_data['floating_ip_id']
@@ -103,7 +110,7 @@ class Collections(CollectionsMixin):
                 # lookup security group resource to get the id
                 sec_group = SecurityGroups(provider, self.api)
                 OSP_PAYLOAD['vm_fields']['security_groups'] = sec_group.get_id(
-                    input_data['security_group']
+                    input_data['security_group'], tenant_id
                 )
 
             if 'key_pair' in input_data and input_data["key_pair"]:
@@ -115,13 +122,7 @@ class Collections(CollectionsMixin):
             # lookup cloud network resource to get the id
             network = Networks(provider, self.api, 'private')
             OSP_PAYLOAD['vm_fields']['cloud_network'] = network.get_id(
-                input_data['network']
-            )
-
-            # lookup cloud tenant resource to get the id
-            tenant = Tenant(provider, self.api)
-            OSP_PAYLOAD['vm_fields']['cloud_tenant'] = tenant.get_id(
-                input_data['tenant']
+                input_data['network'], tenant_id
             )
 
             log.debug("Payload for the provisioning request: {0}".format(
