@@ -28,8 +28,8 @@ class Collections(CollectionsMixin):
     """Instances collections."""
 
     @click.option('--by_id', type=bool, default=False,
-                  help='inst_name given as ID of instance" '
-                       'all other options except --attr are ignored')
+                  help='inst_name given as ID of instance, '
+                       'all other options except --attr and -v are ignored')
     @click.option('--attr', type=str, default='',
                   help='attribute of an instance(s)', multiple=True)
     @click.option('--provider', type=str, default='',
@@ -44,10 +44,13 @@ class Collections(CollectionsMixin):
                   help='vendor of an instance(s)')
     @click.option('--itype', type=str, default='',
                   help='type of an instance(s) - ex. "Openstack", "Amazon"...')
+    @click.option('-v', '--verbose', count=True,
+                  help='expanded information displayed for instance(s)')
     @click.argument('inst_name', metavar='INST_NAME', type=str, default='')
     @client_api
     def query(self, inst_name, provider=None, network=None, tenant=None,
-              subnet=None, vendor=None, itype=None, attr=None, by_id=False):
+              subnet=None, vendor=None, itype=None, attr=None, by_id=False,
+              verbose=0):
         """Query instances.
 
         ::
@@ -71,6 +74,8 @@ class Collections(CollectionsMixin):
         :type attr: tuple
         :param by_id: name is instance id
         :type by_id: bool
+        :param verbose:
+        :type verbose: count
         :return: instance object or list of instance objects
         """
 
@@ -139,7 +144,15 @@ class Collections(CollectionsMixin):
 
                 # return instances that have the attribute passed set
                 if attr:
-                    instances = self.collection.all_include_attributes(attr)
+                    # scrub attr of base attributes
+                    opt_lists = self.collection.options()
+                    att_list = list(attr)
+                    for att in att_list:
+                        if att in opt_lists['attributes']:
+                            att_list.remove(att)
+                    cln_atr = tuple(att_list)
+
+                    instances = self.collection.all_include_attributes(cln_atr)
 
                 # attribute not set, pass back all instances w/basic info
                 else:
@@ -154,12 +167,25 @@ class Collections(CollectionsMixin):
                 log.info(' * ID: %s' % e['id'])
                 log.info(' * NAME: %s' % e['name'])
 
-                if attr:
-                    for a in attr:
+                if verbose:
+                    for k, v in e['_data'].items():
+                        if k == "id" or k == "name":
+                            continue
                         try:
-                            log.info(' * %s: %s' % (a.upper(), e[a]))
+                            log.info(' * %s: %s' % (k.upper(), v))
                         except AttributeError:
-                            log.info(' * %s: ' % a.upper())
+                            log.info(' * %s: ' % k.upper())
+                    if attr:
+                        for a in attr:
+                            if a not in e['_data']:
+                                log.info(' * %s: ' % a.upper())
+                else:
+                    if attr:
+                        for a in attr:
+                            try:
+                                log.info(' * %s: %s' % (a.upper(), e[a]))
+                            except AttributeError:
+                                log.info(' * %s: ' % a.upper())
                 log.info('-' * 50)
 
             if len(instances) == 1:
