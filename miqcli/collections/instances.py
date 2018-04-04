@@ -29,7 +29,7 @@ class Collections(CollectionsMixin):
 
     @click.option('--by_id', type=bool, default=False,
                   help='inst_name given as ID of instance, '
-                       'all other options except --attr and -v are ignored')
+                       'all other options except --attr are ignored')
     @click.option('--attr', type=str, default='',
                   help='attribute of an instance(s)', multiple=True)
     @click.option('--provider', type=str, default='',
@@ -44,13 +44,10 @@ class Collections(CollectionsMixin):
                   help='vendor of an instance(s)')
     @click.option('--itype', type=str, default='',
                   help='type of an instance(s) - ex. "Openstack", "Amazon"...')
-    @click.option('-v', '--verbose', count=True,
-                  help='expanded information displayed for instance(s)')
     @click.argument('inst_name', metavar='INST_NAME', type=str, default='')
     @client_api
     def query(self, inst_name, provider=None, network=None, tenant=None,
-              subnet=None, vendor=None, itype=None, attr=None, by_id=False,
-              verbose=0):
+              subnet=None, vendor=None, itype=None, attr=None, by_id=False):
         """Query instances.
 
         ::
@@ -74,8 +71,6 @@ class Collections(CollectionsMixin):
         :type attr: tuple
         :param by_id: name is instance id
         :type by_id: bool
-        :param verbose:
-        :type verbose: count
         :return: instance object or list of instance objects
         """
 
@@ -163,29 +158,25 @@ class Collections(CollectionsMixin):
             log.info('Instance Info'.center(50))
             log.info('-' * 50)
 
+            debug = click.get_current_context().find_root().params['verbose']
             for e in instances:
                 log.info(' * ID: %s' % e['id'])
                 log.info(' * NAME: %s' % e['name'])
 
-                if verbose:
+                if debug:
                     for k, v in e['_data'].items():
-                        if k == "id" or k == "name":
+                        if k == "id" or k == "name" or k in attr:
                             continue
                         try:
-                            log.info(' * %s: %s' % (k.upper(), v))
+                            log.debug(' * %s: %s' % (k.upper(), v))
                         except AttributeError:
-                            log.info(' * %s: ' % k.upper())
-                    if attr:
-                        for a in attr:
-                            if a not in e['_data']:
-                                log.info(' * %s: ' % a.upper())
-                else:
-                    if attr:
-                        for a in attr:
-                            try:
-                                log.info(' * %s: %s' % (a.upper(), e[a]))
-                            except AttributeError:
-                                log.info(' * %s: ' % a.upper())
+                            log.debug(' * %s: ' % k.upper())
+                if attr:
+                    for a in attr:
+                        try:
+                            log.info(' * %s: %s' % (a.upper(), e[a]))
+                        except AttributeError:
+                            log.info(' * %s: ' % a.upper())
                 log.info('-' * 50)
 
             if len(instances) == 1:

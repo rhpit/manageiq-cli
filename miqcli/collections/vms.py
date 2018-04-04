@@ -29,7 +29,7 @@ class Collections(CollectionsMixin):
 
     @click.option('--by_id', type=bool, default=False,
                   help='name given as ID of vm, all other options except '
-                  '--attr and -v are ignored')
+                  '--attr are ignored')
     @click.option('--attr', type=str, default='',
                   help='attribute of a vm(s)', multiple=True)
     @click.option('--provider', type=str, default='',
@@ -38,12 +38,10 @@ class Collections(CollectionsMixin):
                   help='vendor of an vm(s)')
     @click.option('--vtype', type=str, default='',
                   help='type of an vm(s) - ex. "Openstack", "Amazon"...')
-    @click.option('-v', '--verbose', count=True,
-                  help='expanded information displayed for vm(s)')
     @click.argument('vm_name', metavar="VM_NAME", type=str, default='')
     @client_api
     def query(self, vm_name, provider=None, vendor=None,
-              vtype=None, attr=None, by_id=False, verbose=0):
+              vtype=None, attr=None, by_id=False):
         """Query vms.
 
         ::
@@ -61,8 +59,6 @@ class Collections(CollectionsMixin):
         :type attr: tuple
         :param by_id: name is vm id
         :type by_id: bool
-        :param verbose:
-        :type verbose: count
         :return: vm object or list of vm objects
         """
         vms = None
@@ -143,30 +139,26 @@ class Collections(CollectionsMixin):
             log.info('Vm Info'.center(50))
             log.info('-' * 50)
 
+            debug = click.get_current_context().find_root().params['verbose']
             for e in vms:
                 log.info(' * ID: %s' % e['id'])
                 log.info(' * NAME: %s' % e['name'])
 
-                if verbose:
+                if debug:
                     for k, v in e['_data'].items():
-                        if k == "id" or k == "name":
+                        if k == "id" or k == "name" or k in attr:
                             continue
                         try:
-                            log.info(' * %s: %s' % (k.upper(), v))
+                            log.debug(' * %s: %s' % (k.upper(), v))
                         except AttributeError:
-                            log.info(' * %s: ' % k.upper())
-                    if attr:
-                        for a in attr:
-                            if a not in e['_data']:
-                                log.info(' * %s: ' % a.upper())
+                            log.debug(' * %s: ' % k.upper())
 
-                else:
-                    if attr:
-                        for a in attr:
-                            try:
-                                log.info(' * %s: %s' % (a.upper(), e[a]))
-                            except AttributeError:
-                                log.info(' * %s: ' % a.upper())
+                if attr:
+                    for a in attr:
+                        try:
+                            log.info(' * %s: %s' % (a.upper(), e[a]))
+                        except AttributeError:
+                            log.info(' * %s: ' % a.upper())
                 log.info('-' * 50)
 
             if len(vms) == 1:
