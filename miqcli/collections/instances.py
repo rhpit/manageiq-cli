@@ -28,7 +28,7 @@ class Collections(CollectionsMixin):
     """Instances collections."""
 
     @click.option('--by_id', type=bool, default=False,
-                  help='inst_name given as ID of instance" '
+                  help='inst_name given as ID of instance, '
                        'all other options except --attr are ignored')
     @click.option('--attr', type=str, default='',
                   help='attribute of an instance(s)', multiple=True)
@@ -139,7 +139,15 @@ class Collections(CollectionsMixin):
 
                 # return instances that have the attribute passed set
                 if attr:
-                    instances = self.collection.all_include_attributes(attr)
+                    # scrub attr of base attributes
+                    opt_lists = self.collection.options()
+                    att_list = list(attr)
+                    for att in att_list:
+                        if att in opt_lists['attributes']:
+                            att_list.remove(att)
+                    cln_atr = tuple(att_list)
+
+                    instances = self.collection.all_include_attributes(cln_atr)
 
                 # attribute not set, pass back all instances w/basic info
                 else:
@@ -150,10 +158,19 @@ class Collections(CollectionsMixin):
             log.info('Instance Info'.center(50))
             log.info('-' * 50)
 
+            debug = click.get_current_context().find_root().params['verbose']
             for e in instances:
                 log.info(' * ID: %s' % e['id'])
                 log.info(' * NAME: %s' % e['name'])
 
+                if debug:
+                    for k, v in e['_data'].items():
+                        if k == "id" or k == "name" or k in attr:
+                            continue
+                        try:
+                            log.debug(' * %s: %s' % (k.upper(), v))
+                        except AttributeError:
+                            log.debug(' * %s: ' % k.upper())
                 if attr:
                     for a in attr:
                         try:

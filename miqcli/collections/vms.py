@@ -28,7 +28,8 @@ class Collections(CollectionsMixin):
     """Virtual machines collections."""
 
     @click.option('--by_id', type=bool, default=False,
-                  help='name given as ID of vm')
+                  help='name given as ID of vm, all other options except '
+                  '--attr are ignored')
     @click.option('--attr', type=str, default='',
                   help='attribute of a vm(s)', multiple=True)
     @click.option('--provider', type=str, default='',
@@ -119,7 +120,15 @@ class Collections(CollectionsMixin):
 
                 # return vms that have the attribute passed set
                 if attr:
-                    vms = self.collection.all_include_attributes(attr)
+                    # scrub attr of base attributes
+                    opt_lists = self.collection.options()
+                    att_list = list(attr)
+                    for att in att_list:
+                        if att in opt_lists['attributes']:
+                            att_list.remove(att)
+                    clean_attr = tuple(att_list)
+
+                    vms = self.collection.all_include_attributes(clean_attr)
 
                 # attribute not set, pass back all vms w/basic info
                 else:
@@ -130,9 +139,19 @@ class Collections(CollectionsMixin):
             log.info('Vm Info'.center(50))
             log.info('-' * 50)
 
+            debug = click.get_current_context().find_root().params['verbose']
             for e in vms:
                 log.info(' * ID: %s' % e['id'])
                 log.info(' * NAME: %s' % e['name'])
+
+                if debug:
+                    for k, v in e['_data'].items():
+                        if k == "id" or k == "name" or k in attr:
+                            continue
+                        try:
+                            log.debug(' * %s: %s' % (k.upper(), v))
+                        except AttributeError:
+                            log.debug(' * %s: ' % k.upper())
 
                 if attr:
                     for a in attr:
