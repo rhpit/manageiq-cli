@@ -1,0 +1,12 @@
+---
+object_type: method
+version: 1.0
+object:
+  attributes:
+    name: list_floating_ips
+    display_name: list_floating_ips
+    description: 
+    scope: instance
+    language: ruby
+    location: inline
+  inputs: []
