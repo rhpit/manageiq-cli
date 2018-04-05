@@ -2,14 +2,14 @@
 # Description: Obtain Floating IP/IPS for given
 #      Tenant and External network.
 # Cloud tenant                Either by name or ID
-# cloud_tenant     (string)   pit-jenkins
-# cloud_tenent_id  (integer)  2017000000000001
+# cloud_tenant     (string)   tenant name
+# cloud_tenent_id  (integer)  tenant id
 # Cloud network               External Network Either by name or ID
-# cloud_network    (string)   10.8.240.0
-# cloud_network_id (integer)  2017000000000002
+# cloud_network    (string)   external name network name
+# cloud_network_id (integer)  external network id
 # Floating IP                 Either by name of ID
-# fip              (string)   10.8.240.33
-# fip_id           (integer)  2017000000000145
+# fip              (string)   floating ip
+# fip_id           (integer)  floating ip id
 # Returned list of ips, ids, and instance
 #
 begin
